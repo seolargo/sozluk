@@ -117,9 +117,28 @@ Diğer kurallar:
 - Gerçekten var olan kelime ve deyimleri öner; uydurma. Emin olmadığın bir şeyi dahil etme.
 - Tüm açıklamaları Türkçe yaz.`;
 
+function buildSystemPrompt({ culture, person }) {
+  if (person) {
+    return `${DISCOVER_SYSTEM}
+
+Önemli: Kullanıcı belirli bir kişi seçti: ${person}. Bu durumda görevin değişir — dünya dillerinden kelime aramak yerine, YALNIZCA bu kişiye ait sözler, özdeyişler ve dizeler döndür:
+- Tüm sonuçlarda "kind" alanı "özdeyiş" olmalı.
+- "term" alanına sözün kendisini yaz (biliniyorsa orijinal dilinde), "language" alanına kişinin adı ve dili (örn. "Çiçero — Latince"), "literal" alanına birebir Türkçe çevirisini, "meaning" alanına sözün bağlamını/kaynağını (hangi eser, konuşma veya mektup), "why" alanına kullanıcının hissiyle bağlantısını yaz.
+- SADECE gerçekten kayıtlı ve bu kişiye ait sözler ver. Yaygın ama yanlış atfedilen (apokrif) sözleri dahil etme; atıf tartışmalıysa bunu "meaning" alanında açıkça belirt.
+- Hisse uyan söz sayısı azsa az sonuç döndürmen sorun değil; uydurmak veya zorlama eşleştirme yapmak ciddi hatadır.`;
+  }
+  if (culture) {
+    return `${DISCOVER_SYSTEM}
+
+Önemli: Kullanıcı belirli bir ülke veya medeniyet seçti: ${culture}. Tüm sonuçları yalnızca bu ülkenin/medeniyetin dillerinden ve geleneğinden seç. Tarihî bir medeniyet seçildiyse (örn. İnka, Antik Mısır, Sümer) o medeniyetin kendi dilinden (Keçuva, Eski Mısırca, Sümerce vb.) ve kültürel mirasından kavramlar öner. "Farklı dillerden seçme" kuralı bu durumda geçerli değildir; seçilen kültürün içinde çeşitlilik göster (kelime, deyim, atasözü karışık olabilir). Kavram ailesi kuralı burada daha da önemlidir: bu kültür, kavramı kaç alt türe ayırıyorsa hepsini eksiksiz listele.`;
+  }
+  return DISCOVER_SYSTEM;
+}
+
 app.post('/api/discover', async (req, res) => {
   const query = (req.body?.query || '').trim();
   const culture = (req.body?.culture || '').trim();
+  const person = (req.body?.person || '').trim();
   if (!query) {
     return res.status(400).json({ error: 'Bir his veya düşünce tarifi yazmalısın.' });
   }
@@ -133,12 +152,7 @@ app.post('/api/discover', async (req, res) => {
     const completion = await client.chat.completions.create({
       model: 'gpt-5',
       messages: [
-        {
-          role: 'system',
-          content: culture
-            ? `${DISCOVER_SYSTEM}\n\nÖnemli: Kullanıcı belirli bir ülke veya medeniyet seçti: ${culture}. Tüm sonuçları yalnızca bu ülkenin/medeniyetin dillerinden ve geleneğinden seç. Tarihî bir medeniyet seçildiyse (örn. İnka, Antik Mısır, Sümer) o medeniyetin kendi dilinden (Keçuva, Eski Mısırca, Sümerce vb.) ve kültürel mirasından kavramlar öner. "Farklı dillerden seçme" kuralı bu durumda geçerli değildir; seçilen kültürün içinde çeşitlilik göster (kelime, deyim, atasözü karışık olabilir). Kavram ailesi kuralı burada daha da önemlidir: bu kültür, kavramı kaç alt türe ayırıyorsa hepsini eksiksiz listele.`
-            : DISCOVER_SYSTEM,
-        },
+        { role: 'system', content: buildSystemPrompt({ culture, person }) },
         { role: 'user', content: query },
       ],
       response_format: {

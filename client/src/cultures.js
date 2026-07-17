@@ -1,5 +1,70 @@
 // Kavram aramasında seçilebilecek ülke ve medeniyetler.
 // Değerler serbest metin olarak modele iletilir; gruplar sadece görsel düzen içindir.
+// Söz aramasında seçilebilecek ünlü kişiler.
+export const PERSON_GROUPS = [
+  {
+    label: 'Türk Büyükleri',
+    options: [
+      'Mustafa Kemal Atatürk', 'Mevlânâ Celâleddîn-i Rûmî', 'Yunus Emre',
+      'Hacı Bektaş-ı Veli', 'Ömer Hayyam', 'Ali Kuşçu', 'Fatih Sultan Mehmet',
+      'Kanuni Sultan Süleyman', 'Nâzım Hikmet', 'Sabahattin Ali',
+      'Ahmet Hamdi Tanpınar', 'Aşık Veysel',
+    ],
+  },
+  {
+    label: 'Antik Filozoflar',
+    options: [
+      'Sokrates', 'Platon', 'Aristoteles', 'Çiçero', 'Seneca', 'Marcus Aurelius',
+      'Epiktetos', 'Epikür', 'Herakleitos', 'Diyojen', 'Konfüçyüs', 'Lao Tzu',
+      'Buda', 'Sun Tzu',
+    ],
+  },
+  {
+    label: 'Düşünürler & Filozoflar',
+    options: [
+      'Friedrich Nietzsche', 'Immanuel Kant', 'Arthur Schopenhauer',
+      'Søren Kierkegaard', 'Jean-Paul Sartre', 'Albert Camus',
+      'Simone de Beauvoir', 'Hannah Arendt', 'Michel de Montaigne',
+      'Baruch Spinoza', 'John Stuart Mill', 'İbn-i Haldun', 'Erasmus',
+    ],
+  },
+  {
+    label: 'Yazarlar & Şairler',
+    options: [
+      'William Shakespeare', 'Johann Wolfgang von Goethe', 'Lev Tolstoy',
+      'Fyodor Dostoyevski', 'Franz Kafka', 'Oscar Wilde', 'Mark Twain',
+      'Victor Hugo', 'Hâfız-ı Şirâzî', 'Halil Cibran', 'Rabindranath Tagore',
+      'Pablo Neruda', 'Emily Dickinson', 'Virginia Woolf', 'Jorge Luis Borges',
+      'Antoine de Saint-Exupéry', 'Samuel Beckett',
+    ],
+  },
+  {
+    label: 'Liderler & Devlet İnsanları',
+    options: [
+      'Winston Churchill', 'Abraham Lincoln', 'Mahatma Gandhi', 'Nelson Mandela',
+      'Kraliçe I. Elizabeth', 'Kraliçe II. Elizabeth', 'Napolyon Bonapart',
+      'Julius Caesar', 'Martin Luther King', 'John F. Kennedy',
+      'Eleanor Roosevelt', 'Selahaddin Eyyubi',
+    ],
+  },
+  {
+    label: 'Bilim İnsanları',
+    options: [
+      'Albert Einstein', 'Isaac Newton', 'Marie Curie', 'Nikola Tesla',
+      'Charles Darwin', 'Galileo Galilei', 'İbn-i Sina', 'Stephen Hawking',
+      'Carl Sagan', 'Richard Feynman',
+    ],
+  },
+  {
+    label: 'Sanatçılar',
+    options: [
+      'Leonardo da Vinci', 'Michelangelo', 'Vincent van Gogh', 'Pablo Picasso',
+      'Frida Kahlo', 'Ludwig van Beethoven', 'Wolfgang Amadeus Mozart',
+      'Charlie Chaplin',
+    ],
+  },
+];
+
 export const CULTURE_GROUPS = [
   {
     label: 'Kadim Medeniyetler',

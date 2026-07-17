@@ -164,22 +164,41 @@ button:hover {
 
 .discover-controls {
   display: flex;
+  flex-wrap: wrap;
   gap: 0.5rem;
+  align-items: stretch;
 }
 
 .discover-controls select {
-  flex: 1;
-  padding: 0.6rem 0.85rem;
+  flex: 1 1 200px;
+  min-width: 0;
+  height: 46px;
+  padding: 0 0.85rem;
   border: 1px solid #d1d5db;
   border-radius: 8px;
   font-size: 1rem;
   background: #fff;
   cursor: pointer;
+  text-overflow: ellipsis;
 }
 
 .discover-controls select:focus {
   outline: 2px solid #6366f1;
   border-color: transparent;
+}
+
+.discover-controls button {
+  height: 46px;
+  padding: 0 1.4rem;
+  white-space: nowrap;
+  flex-shrink: 0;
+}
+
+@media (max-width: 560px) {
+  .discover-controls select,
+  .discover-controls button {
+    flex: 1 1 100%;
+  }
 }
 
 .loader-card {

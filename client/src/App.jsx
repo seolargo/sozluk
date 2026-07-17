@@ -1,11 +1,20 @@
 import { useEffect, useRef, useState } from 'react';
 import './App.css';
 
-import { CULTURE_GROUPS } from './cultures';
+import { CULTURE_GROUPS, PERSON_GROUPS } from './cultures';
 
 const API = '/api/words';
 
-function loaderSteps(culture) {
+function loaderSteps(culture, person) {
+  if (person) {
+    return [
+      { at: 0, label: 'Cümlen çözümleniyor' },
+      { at: 4, label: `${person}'in kayıtlı sözleri taranıyor` },
+      { at: 14, label: 'Hissinle örtüşen sözler seçiliyor' },
+      { at: 28, label: 'Kaynaklar ve doğruluk kontrol ediliyor' },
+      { at: 45, label: 'Türkçe çeviri ve açıklamalar yazılıyor' },
+    ];
+  }
   return [
     { at: 0, label: 'Cümlen çözümleniyor' },
     {
@@ -20,7 +29,7 @@ function loaderSteps(culture) {
   ];
 }
 
-function DiscoverLoader({ culture }) {
+function DiscoverLoader({ culture, person }) {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(Date.now());
 
@@ -32,7 +41,7 @@ function DiscoverLoader({ culture }) {
     return () => clearInterval(t);
   }, []);
 
-  const steps = loaderSteps(culture);
+  const steps = loaderSteps(culture, person);
   const activeIndex = steps.reduce(
     (acc, s, i) => (elapsed >= s.at ? i : acc),
     0
@@ -73,6 +82,7 @@ function App() {
   const [error, setError] = useState('');
   const [feeling, setFeeling] = useState('');
   const [culture, setCulture] = useState('');
+  const [person, setPerson] = useState('');
   const [discoverResults, setDiscoverResults] = useState([]);
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [discoverError, setDiscoverError] = useState('');
@@ -126,7 +136,7 @@ function App() {
       const res = await fetch('/api/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: feeling, culture }),
+        body: JSON.stringify({ query: feeling, culture, person }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -198,13 +208,29 @@ function App() {
                 </optgroup>
               ))}
             </select>
+            <select
+              value={person}
+              onChange={(e) => setPerson(e.target.value)}
+              title="Yalnızca bir kişinin sözlerinde ara"
+            >
+              <option value="">🗣️ Kişi filtresi yok</option>
+              {PERSON_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((p) => (
+                    <option key={p} value={p}>
+                      {p}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
             <button type="submit" disabled={discoverLoading}>
               {discoverLoading ? 'Aranıyor...' : 'Kavram Ara'}
             </button>
           </div>
         </form>
         {discoverError && <p className="error">{discoverError}</p>}
-        {discoverLoading && <DiscoverLoader culture={culture} />}
+        {discoverLoading && <DiscoverLoader culture={culture} person={person} />}
         <ul className="discover-list">
           {discoverResults.map((r) => (
             <li key={`${r.language}-${r.term}`} className="discover-card">

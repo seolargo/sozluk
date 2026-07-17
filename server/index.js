@@ -42,7 +42,7 @@ app.get('/api/words', async (req, res) => {
 
 // Yeni kelime ekle
 app.post('/api/words', async (req, res) => {
-  const { term, definition } = req.body;
+  const { term, definition, meta } = req.body;
   if (!term?.trim() || !definition?.trim()) {
     return res.status(400).json({ error: 'Kelime ve tanım zorunludur.' });
   }
@@ -53,6 +53,16 @@ app.post('/api/words', async (req, res) => {
     definition: definition.trim(),
     createdAt: new Date().toISOString(),
   };
+  if (meta && typeof meta === 'object') {
+    const pick = (k) => (typeof meta[k] === 'string' ? meta[k].trim() : '');
+    word.meta = {
+      language: pick('language'),
+      kind: pick('kind'),
+      pronunciation: pick('pronunciation'),
+      literal: pick('literal'),
+      meaning: pick('meaning'),
+    };
+  }
   words.unshift(word);
   await writeWords(words);
   res.status(201).json(word);
@@ -132,6 +142,68 @@ function outputLangRule(lang) {
   return lang === 'en'
     ? '\n\nOutput language: Write ALL free-text fields ("language", "pronunciation", "literal", "meaning", "why") in ENGLISH. The user query may be in any language. Use English phonetic spelling for pronunciations.'
     : '\n\nÇıktı dili: Tüm serbest metin alanlarını ("language", "pronunciation", "literal", "meaning", "why") TÜRKÇE yaz. Okunuşları Türkçe fonetiğiyle ver.';
+}
+
+// Kişi alıntılarının web aramasıyla çapraz doğrulaması için şema
+const VERIFY_SCHEMA = {
+  type: 'object',
+  additionalProperties: false,
+  required: ['verdicts'],
+  properties: {
+    verdicts: {
+      type: 'array',
+      items: {
+        type: 'object',
+        additionalProperties: false,
+        required: ['term', 'verified', 'note'],
+        properties: {
+          term: {
+            type: 'string',
+            description: 'Doğrulanan sözün "term" alanı, BİREBİR kopyalanmış',
+          },
+          verified: {
+            type: 'boolean',
+            description:
+              'Güvenilir kaynaklar söze ve atfa net destek veriyorsa true; kaynak bulunamadı, çelişkili veya apokrif ise false',
+          },
+          note: {
+            type: 'string',
+            description:
+              'Kısa gerekçe: hangi kaynak doğruladı ya da neden doğrulanamadı (çıktı dilinde)',
+          },
+        },
+      },
+    },
+  },
+};
+
+async function verifyQuotes(client, person, results, lang) {
+  const quoteList = results
+    .map((r, i) => `${i + 1}. "${r.term}" — iddia edilen kaynak: ${r.meaning}`)
+    .join('\n');
+  const response = await client.responses.create({
+    model: 'gpt-5',
+    tools: [{ type: 'web_search' }],
+    input: `Aşağıdaki sözlerin her birinin GERÇEKTEN şu kişiye ait olup olmadığını web araması yaparak çapraz kontrol et: ${person}.
+
+${quoteList}
+
+Kurallar:
+- Her söz için güvenilir kaynaklarda (Wikiquote, arşivler, akademik kaynaklar, kurum siteleri) atfı ara.
+- Kaynaklar net destekliyorsa verified=true; kaynak bulamadıysan, atıf tartışmalıysa veya söz yaygın-ama-apokrif listelerindeyse verified=false.
+- Emin olamıyorsan verified=false ver — yanlış onaylamak, temkinli olmamaktan kötüdür.
+- "term" alanına sözü BİREBİR kopyala (numarasız, tırnaksız değişiklik yapma).
+- "note" kısa olsun ve ${lang === 'en' ? 'İNGİLİZCE' : 'TÜRKÇE'} yazılsın.`,
+    text: {
+      format: {
+        type: 'json_schema',
+        name: 'quote_verdicts',
+        strict: true,
+        schema: VERIFY_SCHEMA,
+      },
+    },
+  });
+  return JSON.parse(response.output_text).verdicts;
 }
 
 const EXHAUSTED_RULE = `
@@ -230,7 +302,28 @@ app.post('/api/discover', async (req, res) => {
         error: err('Modelden geçerli bir yanıt alınamadı.', 'No valid response from the model.'),
       });
     }
-    res.json(JSON.parse(message.content));
+    const payload = JSON.parse(message.content);
+    if (person && payload.results?.length) {
+      try {
+        const verdicts = await verifyQuotes(client, person, payload.results, lang);
+        const norm = (s) => s.trim().toLowerCase().replace(/["""'']/g, '');
+        const byTerm = new Map(verdicts.map((v) => [norm(v.term), v]));
+        payload.results = payload.results.map((r) => {
+          const v = byTerm.get(norm(r.term));
+          return v
+            ? { ...r, verified: v.verified, verifyNote: v.note }
+            : { ...r, verified: null, verifyNote: '' };
+        });
+      } catch (e) {
+        console.error('doğrulama hatası:', e);
+        payload.results = payload.results.map((r) => ({
+          ...r,
+          verified: null,
+          verifyNote: '',
+        }));
+      }
+    }
+    res.json(payload);
   } catch (e) {
     if (e instanceof OpenAI.AuthenticationError) {
       return res.status(503).json({

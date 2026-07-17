@@ -11,6 +11,14 @@ import { STRINGS } from './i18n';
 
 const API = '/api/words';
 
+// "atasözü" → "atasozu" gibi CSS sınıfı için ASCII'ye çevirir
+function kindSlug(kind) {
+  return (kind || '')
+    .replaceAll('ö', 'o')
+    .replaceAll('ü', 'u')
+    .replaceAll('ş', 's');
+}
+
 function loaderSteps(t, culture, person, sacredText) {
   const s = t.steps;
   if (sacredText) {
@@ -27,8 +35,8 @@ function loaderSteps(t, culture, person, sacredText) {
       { at: 0, label: s.parse },
       { at: 4, label: s.scanPerson(person) },
       { at: 14, label: s.matchQuotes },
-      { at: 28, label: s.checkSources },
-      { at: 45, label: s.translating },
+      { at: 30, label: s.translating },
+      { at: 55, label: s.checkSources },
     ];
   }
   return [
@@ -261,7 +269,17 @@ function App() {
     const res = await fetch(API, {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ term: r.term, definition }),
+      body: JSON.stringify({
+        term: r.term,
+        definition,
+        meta: {
+          language: r.language,
+          kind: r.kind,
+          pronunciation: r.pronunciation,
+          literal: r.literal,
+          meaning: r.meaning,
+        },
+      }),
     });
     if (res.ok) {
       setAddedTerms((prev) => new Set(prev).add(r.term));
@@ -372,18 +390,22 @@ function App() {
         )}
         <ul className="discover-list">
           {discoverResults.map((r) => (
-            <li key={`${r.language}-${r.term}`} className="discover-card">
+            <li
+              key={`${r.language}-${r.term}`}
+              className={`discover-card${r.verified === false ? ' unverified' : ''}`}
+            >
               <div className="discover-head">
                 <span className="word-term">{r.term}</span>
                 <span className="badge">{r.language}</span>
-                <span
-                  className={`badge badge-kind kind-${(r.kind || '')
-                    .replaceAll('ö', 'o')
-                    .replaceAll('ü', 'u')
-                    .replaceAll('ş', 's')}`}
-                >
+                <span className={`badge badge-kind kind-${kindSlug(r.kind)}`}>
                   {t.kinds[r.kind] || r.kind}
                 </span>
+                {r.verified === true && (
+                  <span className="badge badge-verified">{t.verified}</span>
+                )}
+                {r.verified === false && (
+                  <span className="badge badge-unverified">{t.unverified}</span>
+                )}
                 {r.pronunciation && (
                   <span className="muted pron">[{r.pronunciation}]</span>
                 )}
@@ -395,6 +417,15 @@ function App() {
               )}
               <p className="word-def">{r.meaning}</p>
               <p className="discover-why">{r.why}</p>
+              {r.verifyNote && (
+                <p
+                  className={`verify-note ${
+                    r.verified === false ? 'verify-warn' : 'verify-ok'
+                  }`}
+                >
+                  {r.verifyNote}
+                </p>
+              )}
               <div className="card-actions">
                 <button
                   className="add-result-btn"
@@ -459,9 +490,33 @@ function App() {
       <ul className="word-list">
         {words.map((w) => (
           <li key={w.id} className="word-card">
-            <div>
-              <span className="word-term">{w.term}</span>
-              <p className="word-def">{w.definition}</p>
+            <div className="word-body">
+              <div className="word-head">
+                <span className="word-term">{w.term}</span>
+                {w.meta?.language && (
+                  <span className="badge">{w.meta.language}</span>
+                )}
+                {w.meta?.kind && (
+                  <span className={`badge badge-kind kind-${kindSlug(w.meta.kind)}`}>
+                    {t.kinds[w.meta.kind] || w.meta.kind}
+                  </span>
+                )}
+                {w.meta?.pronunciation && (
+                  <span className="muted pron">[{w.meta.pronunciation}]</span>
+                )}
+              </div>
+              {w.meta ? (
+                <>
+                  {w.meta.literal && (
+                    <p className="word-def">
+                      <em>{t.literalLabel}</em> {w.meta.literal}
+                    </p>
+                  )}
+                  {w.meta.meaning && <p className="word-def">{w.meta.meaning}</p>}
+                </>
+              ) : (
+                <p className="word-def">{w.definition}</p>
+              )}
             </div>
             <button
               className="delete-btn"

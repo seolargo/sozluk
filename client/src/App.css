@@ -345,6 +345,51 @@ button:hover {
   color: #a21caf;
 }
 
+.badge-verified {
+  background: #ecfdf5;
+  color: #059669;
+}
+
+.badge-unverified {
+  background: #fef3c7;
+  color: #b45309;
+}
+
+.discover-card.unverified {
+  opacity: 0.8;
+  border-color: #fcd34d;
+  background: #fffdf5;
+}
+
+.verify-note {
+  margin: 0 0 0.75rem;
+  padding: 0.5rem 0.75rem;
+  border-radius: 6px;
+  font-size: 0.85rem;
+}
+
+.verify-warn {
+  background: #fef3c7;
+  color: #92400e;
+}
+
+.verify-ok {
+  background: #ecfdf5;
+  color: #047857;
+}
+
+.word-body {
+  min-width: 0;
+}
+
+.word-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+  margin-bottom: 0.25rem;
+}
+
 .pron {
   font-size: 0.85rem;
 }

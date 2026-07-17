@@ -1,47 +1,44 @@
-import { useEffect, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 
-import { CULTURE_GROUPS, PERSON_GROUPS } from './cultures';
+import { CIVILIZATIONS, COUNTRY_GROUPS, PERSON_GROUPS } from './cultures';
+import { STRINGS } from './i18n';
 
 const API = '/api/words';
 
-function loaderSteps(culture, person) {
+function loaderSteps(t, culture, person) {
+  const s = t.steps;
   if (person) {
     return [
-      { at: 0, label: 'Cümlen çözümleniyor' },
-      { at: 4, label: `${person}'in kayıtlı sözleri taranıyor` },
-      { at: 14, label: 'Hissinle örtüşen sözler seçiliyor' },
-      { at: 28, label: 'Kaynaklar ve doğruluk kontrol ediliyor' },
-      { at: 45, label: 'Türkçe çeviri ve açıklamalar yazılıyor' },
+      { at: 0, label: s.parse },
+      { at: 4, label: s.scanPerson(person) },
+      { at: 14, label: s.matchQuotes },
+      { at: 28, label: s.checkSources },
+      { at: 45, label: s.translating },
     ];
   }
   return [
-    { at: 0, label: 'Cümlen çözümleniyor' },
-    {
-      at: 4,
-      label: culture
-        ? `${culture} dilleri ve kültürel mirası taranıyor`
-        : 'Dünya dilleri ve kültürleri taranıyor',
-    },
-    { at: 14, label: 'Kavram aileleri tespit ediliyor (éros, agápi, philía...)' },
-    { at: 28, label: 'Atasözleri, deyimler ve özdeyişler aranıyor' },
-    { at: 45, label: 'Sonuçlar doğrulanıp Türkçe açıklamalar yazılıyor' },
+    { at: 0, label: s.parse },
+    { at: 4, label: culture ? s.scanCulture(culture) : s.scanWorld },
+    { at: 14, label: s.families },
+    { at: 28, label: s.proverbs },
+    { at: 45, label: s.writing },
   ];
 }
 
-function DiscoverLoader({ culture, person }) {
+function DiscoverLoader({ t, culture, person }) {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(Date.now());
 
   useEffect(() => {
-    const t = setInterval(
+    const timer = setInterval(
       () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
       1000
     );
-    return () => clearInterval(t);
+    return () => clearInterval(timer);
   }, []);
 
-  const steps = loaderSteps(culture, person);
+  const steps = loaderSteps(t, culture, person);
   const activeIndex = steps.reduce(
     (acc, s, i) => (elapsed >= s.at ? i : acc),
     0
@@ -52,7 +49,7 @@ function DiscoverLoader({ culture, person }) {
       <div className="loader-header">
         <span className="spinner" />
         <strong>{steps[activeIndex].label}...</strong>
-        <span className="loader-elapsed">{elapsed}sn</span>
+        <span className="loader-elapsed">{elapsed}s</span>
       </div>
       <ul className="loader-steps">
         {steps.map((s, i) => (
@@ -66,14 +63,17 @@ function DiscoverLoader({ culture, person }) {
           </li>
         ))}
       </ul>
-      <p className="loader-note">
-        Derin bir arama bu — genellikle 30-60 saniye sürüyor.
-      </p>
+      <p className="loader-note">{t.loaderNote}</p>
     </div>
   );
 }
 
 function App() {
+  const [lang, setLang] = useState(
+    () => localStorage.getItem('sozluk-lang') || 'tr'
+  );
+  const t = STRINGS[lang];
+
   const [words, setWords] = useState([]);
   const [query, setQuery] = useState('');
   const [term, setTerm] = useState('');
@@ -88,6 +88,20 @@ function App() {
   const [discoverError, setDiscoverError] = useState('');
   const [addedTerms, setAddedTerms] = useState(new Set());
 
+  const regionNames = useMemo(
+    () => new Intl.DisplayNames([lang], { type: 'region' }),
+    [lang]
+  );
+
+  function toggleLang() {
+    const next = lang === 'tr' ? 'en' : 'tr';
+    setLang(next);
+    localStorage.setItem('sozluk-lang', next);
+    // Seçili filtre adları dile bağlı; karışıklığı önlemek için sıfırla
+    setCulture('');
+    setPerson('');
+  }
+
   async function fetchWords(q = '') {
     setLoading(true);
     try {
@@ -95,15 +109,16 @@ function App() {
       setWords(await res.json());
       setError('');
     } catch {
-      setError('Sunucuya ulaşılamadı. Backend çalışıyor mu?');
+      setError(t.serverUnreachable);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    const t = setTimeout(() => fetchWords(query), 300);
-    return () => clearTimeout(t);
+    const timer = setTimeout(() => fetchWords(query), 300);
+    return () => clearTimeout(timer);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [query]);
 
   async function handleSubmit(e) {
@@ -136,17 +151,17 @@ function App() {
       const res = await fetch('/api/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: feeling, culture, person }),
+        body: JSON.stringify({ query: feeling, culture, person, lang }),
       });
       const data = await res.json();
       if (!res.ok) {
-        setDiscoverError(data.error || 'Bir hata oluştu.');
+        setDiscoverError(data.error || t.genericError);
       } else {
         setDiscoverResults(data.results || []);
         setAddedTerms(new Set());
       }
     } catch {
-      setDiscoverError('Sunucuya ulaşılamadı. Backend çalışıyor mu?');
+      setDiscoverError(t.serverUnreachable);
     } finally {
       setDiscoverLoading(false);
     }
@@ -154,8 +169,8 @@ function App() {
 
   async function handleAddResult(r) {
     const definition = [
-      `(${r.language}${r.kind ? `, ${r.kind}` : ''})`,
-      r.literal ? `Birebir: "${r.literal}".` : '',
+      `(${r.language}${r.kind ? `, ${t.kinds[r.kind] || r.kind}` : ''})`,
+      r.literal ? `${t.literalWord}: "${r.literal}".` : '',
       r.meaning,
     ]
       .filter(Boolean)
@@ -173,64 +188,76 @@ function App() {
 
   return (
     <div className="container">
+      <button className="lang-toggle" onClick={toggleLang} title="Türkçe / English">
+        {t.langToggle}
+      </button>
       <header>
-        <h1>📖 Sözlük</h1>
-        <p className="subtitle">Kendi kelime dağarcığını oluştur</p>
+        <h1>{t.title}</h1>
+        <p className="subtitle">{t.subtitle}</p>
       </header>
 
       <section className="discover">
-        <h2>🌍 Hissini anlat, kelimesini bul</h2>
-        <p className="muted discover-hint">
-          Ne hissettiğini kendi cümlelerinle yaz; dünya dillerinden bu hissi
-          karşılayan kelime, deyim ve atasözlerini bulalım.
-        </p>
+        <h2>{t.discoverTitle}</h2>
+        <p className="muted discover-hint">{t.discoverHint}</p>
         <form onSubmit={handleDiscover}>
           <textarea
             value={feeling}
             onChange={(e) => setFeeling(e.target.value)}
             rows={3}
-            placeholder="Örn: Bir daha asla dönmeyecek güzel günlere karşı tatlı-buruk bir özlem duyuyorum..."
+            placeholder={t.feelingPlaceholder}
           />
           <div className="discover-controls">
             <select
               value={culture}
               onChange={(e) => setCulture(e.target.value)}
-              title="Aramayı bir ülke veya medeniyetle sınırla"
+              title={t.cultureTitle}
             >
-              <option value="">🌍 Tüm dünya</option>
-              {CULTURE_GROUPS.map((group) => (
-                <optgroup key={group.label} label={group.label}>
-                  {group.options.map((c) => (
-                    <option key={c} value={c}>
-                      {c}
-                    </option>
-                  ))}
+              <option value="">{t.allWorld}</option>
+              <optgroup label={CIVILIZATIONS.label[lang]}>
+                {CIVILIZATIONS.options.map((c) => (
+                  <option key={c.tr} value={c[lang]}>
+                    {c[lang]}
+                  </option>
+                ))}
+              </optgroup>
+              {COUNTRY_GROUPS.map((group) => (
+                <optgroup key={group.label.en} label={group.label[lang]}>
+                  {group.codes
+                    .map((code) => ({ code, name: regionNames.of(code) }))
+                    .sort((a, b) => a.name.localeCompare(b.name, lang))
+                    .map(({ code, name }) => (
+                      <option key={code} value={name}>
+                        {name}
+                      </option>
+                    ))}
                 </optgroup>
               ))}
             </select>
             <select
               value={person}
               onChange={(e) => setPerson(e.target.value)}
-              title="Yalnızca bir kişinin sözlerinde ara"
+              title={t.personTitle}
             >
-              <option value="">🗣️ Kişi filtresi yok</option>
+              <option value="">{t.noPerson}</option>
               {PERSON_GROUPS.map((group) => (
-                <optgroup key={group.label} label={group.label}>
+                <optgroup key={group.label.en} label={group.label[lang]}>
                   {group.options.map((p) => (
-                    <option key={p} value={p}>
-                      {p}
+                    <option key={p.tr} value={p[lang]}>
+                      {p[lang]}
                     </option>
                   ))}
                 </optgroup>
               ))}
             </select>
             <button type="submit" disabled={discoverLoading}>
-              {discoverLoading ? 'Aranıyor...' : 'Kavram Ara'}
+              {discoverLoading ? t.searching : t.searchBtn}
             </button>
           </div>
         </form>
         {discoverError && <p className="error">{discoverError}</p>}
-        {discoverLoading && <DiscoverLoader culture={culture} person={person} />}
+        {discoverLoading && (
+          <DiscoverLoader t={t} culture={culture} person={person} />
+        )}
         <ul className="discover-list">
           {discoverResults.map((r) => (
             <li key={`${r.language}-${r.term}`} className="discover-card">
@@ -243,7 +270,7 @@ function App() {
                     .replaceAll('ü', 'u')
                     .replaceAll('ş', 's')}`}
                 >
-                  {r.kind}
+                  {t.kinds[r.kind] || r.kind}
                 </span>
                 {r.pronunciation && (
                   <span className="muted pron">[{r.pronunciation}]</span>
@@ -251,7 +278,7 @@ function App() {
               </div>
               {r.literal && (
                 <p className="word-def">
-                  <em>Birebir çeviri:</em> {r.literal}
+                  <em>{t.literalLabel}</em> {r.literal}
                 </p>
               )}
               <p className="word-def">{r.meaning}</p>
@@ -261,7 +288,7 @@ function App() {
                 onClick={() => handleAddResult(r)}
                 disabled={addedTerms.has(r.term)}
               >
-                {addedTerms.has(r.term) ? '✓ Eklendi' : '+ Sözlüğe ekle'}
+                {addedTerms.has(r.term) ? t.added : t.addToDict}
               </button>
             </li>
           ))}
@@ -272,29 +299,27 @@ function App() {
         <input
           value={term}
           onChange={(e) => setTerm(e.target.value)}
-          placeholder="Kelime"
+          placeholder={t.termPlaceholder}
         />
         <input
           value={definition}
           onChange={(e) => setDefinition(e.target.value)}
-          placeholder="Tanım"
+          placeholder={t.defPlaceholder}
         />
-        <button type="submit">Ekle</button>
+        <button type="submit">{t.addBtn}</button>
       </form>
 
       <input
         className="search"
         value={query}
         onChange={(e) => setQuery(e.target.value)}
-        placeholder="🔍 Kelime veya tanım ara..."
+        placeholder={t.searchPlaceholder}
       />
 
       {error && <p className="error">{error}</p>}
-      {loading && !error && <p className="muted">Yükleniyor...</p>}
+      {loading && !error && <p className="muted">{t.loadingWords}</p>}
       {!loading && !error && words.length === 0 && (
-        <p className="muted">
-          {query ? 'Sonuç bulunamadı.' : 'Henüz kelime yok. İlk kelimeni ekle!'}
-        </p>
+        <p className="muted">{query ? t.noResults : t.emptyDict}</p>
       )}
 
       <ul className="word-list">
@@ -307,7 +332,7 @@ function App() {
             <button
               className="delete-btn"
               onClick={() => handleDelete(w.id)}
-              title="Sil"
+              title={t.deleteTitle}
             >
               ✕
             </button>

@@ -114,12 +114,17 @@ Diğer kurallar:
 - Normalde 5-8 sonuç döndür; kavram ailesi varsa gerektiği kadar artır. En isabetli sonucu en başa koy.
 - Farklı dillerden ve kültürlerden seçmeye çalış; sadece tek bir dile yaslanma. Ancak bir dilin kavram ailesi varsa o aileyi bölme, tamamını ver.
 - Bir kelimenin aynı dilde birden çok anlam katmanı/nüansı varsa bunları "meaning" alanında açıkça belirt.
-- Gerçekten var olan kelime ve deyimleri öner; uydurma. Emin olmadığın bir şeyi dahil etme.
-- Tüm açıklamaları Türkçe yaz.`;
+- Gerçekten var olan kelime ve deyimleri öner; uydurma. Emin olmadığın bir şeyi dahil etme.`;
 
-function buildSystemPrompt({ culture, person }) {
+function outputLangRule(lang) {
+  return lang === 'en'
+    ? '\n\nOutput language: Write ALL free-text fields ("language", "pronunciation", "literal", "meaning", "why") in ENGLISH. The user query may be in any language. Use English phonetic spelling for pronunciations.'
+    : '\n\nÇıktı dili: Tüm serbest metin alanlarını ("language", "pronunciation", "literal", "meaning", "why") TÜRKÇE yaz. Okunuşları Türkçe fonetiğiyle ver.';
+}
+
+function buildSystemPrompt({ culture, person, lang }) {
   if (person) {
-    return `${DISCOVER_SYSTEM}
+    return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
 
 Önemli: Kullanıcı belirli bir kişi seçti: ${person}. Bu durumda görevin değişir — dünya dillerinden kelime aramak yerine, YALNIZCA bu kişiye ait sözler, özdeyişler ve dizeler döndür:
 - Tüm sonuçlarda "kind" alanı "özdeyiş" olmalı.
@@ -128,23 +133,33 @@ function buildSystemPrompt({ culture, person }) {
 - Hisse uyan söz sayısı azsa az sonuç döndürmen sorun değil; uydurmak veya zorlama eşleştirme yapmak ciddi hatadır.`;
   }
   if (culture) {
-    return `${DISCOVER_SYSTEM}
+    return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
 
 Önemli: Kullanıcı belirli bir ülke veya medeniyet seçti: ${culture}. Tüm sonuçları yalnızca bu ülkenin/medeniyetin dillerinden ve geleneğinden seç. Tarihî bir medeniyet seçildiyse (örn. İnka, Antik Mısır, Sümer) o medeniyetin kendi dilinden (Keçuva, Eski Mısırca, Sümerce vb.) ve kültürel mirasından kavramlar öner. "Farklı dillerden seçme" kuralı bu durumda geçerli değildir; seçilen kültürün içinde çeşitlilik göster (kelime, deyim, atasözü karışık olabilir). Kavram ailesi kuralı burada daha da önemlidir: bu kültür, kavramı kaç alt türe ayırıyorsa hepsini eksiksiz listele.`;
   }
-  return DISCOVER_SYSTEM;
+  return `${DISCOVER_SYSTEM}${outputLangRule(lang)}`;
 }
 
 app.post('/api/discover', async (req, res) => {
   const query = (req.body?.query || '').trim();
   const culture = (req.body?.culture || '').trim();
   const person = (req.body?.person || '').trim();
+  const lang = req.body?.lang === 'en' ? 'en' : 'tr';
+  const err = (tr, en) => (lang === 'en' ? en : tr);
   if (!query) {
-    return res.status(400).json({ error: 'Bir his veya düşünce tarifi yazmalısın.' });
+    return res.status(400).json({
+      error: err(
+        'Bir his veya düşünce tarifi yazmalısın.',
+        'Please describe a feeling or thought first.'
+      ),
+    });
   }
   if (!process.env.OPENAI_API_KEY) {
     return res.status(503).json({
-      error: 'OPENAI_API_KEY tanımlı değil. server/.env dosyasına anahtarını ekle.',
+      error: err(
+        'OPENAI_API_KEY tanımlı değil. server/.env dosyasına anahtarını ekle.',
+        'OPENAI_API_KEY is not set. Add your key to server/.env.'
+      ),
     });
   }
   try {
@@ -152,7 +167,7 @@ app.post('/api/discover', async (req, res) => {
     const completion = await client.chat.completions.create({
       model: 'gpt-5',
       messages: [
-        { role: 'system', content: buildSystemPrompt({ culture, person }) },
+        { role: 'system', content: buildSystemPrompt({ culture, person, lang }) },
         { role: 'user', content: query },
       ],
       response_format: {
@@ -162,18 +177,35 @@ app.post('/api/discover', async (req, res) => {
     });
     const message = completion.choices[0]?.message;
     if (!message?.content) {
-      return res.status(502).json({ error: 'Modelden geçerli bir yanıt alınamadı.' });
+      return res.status(502).json({
+        error: err('Modelden geçerli bir yanıt alınamadı.', 'No valid response from the model.'),
+      });
     }
     res.json(JSON.parse(message.content));
-  } catch (err) {
-    if (err instanceof OpenAI.AuthenticationError) {
-      return res.status(503).json({ error: 'API anahtarı geçersiz. OPENAI_API_KEY değerini kontrol et.' });
+  } catch (e) {
+    if (e instanceof OpenAI.AuthenticationError) {
+      return res.status(503).json({
+        error: err(
+          'API anahtarı geçersiz. OPENAI_API_KEY değerini kontrol et.',
+          'Invalid API key. Check your OPENAI_API_KEY.'
+        ),
+      });
     }
-    if (err instanceof OpenAI.RateLimitError) {
-      return res.status(429).json({ error: 'İstek limiti aşıldı, biraz bekleyip tekrar dene.' });
+    if (e instanceof OpenAI.RateLimitError) {
+      return res.status(429).json({
+        error: err(
+          'İstek limiti aşıldı, biraz bekleyip tekrar dene.',
+          'Rate limit exceeded, wait a bit and try again.'
+        ),
+      });
     }
-    console.error('discover hatası:', err);
-    res.status(502).json({ error: 'Kavram araması sırasında bir hata oluştu.' });
+    console.error('discover hatası:', e);
+    res.status(502).json({
+      error: err(
+        'Kavram araması sırasında bir hata oluştu.',
+        'An error occurred during the concept search.'
+      ),
+    });
   }
 });
 

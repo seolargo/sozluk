@@ -30,6 +30,10 @@ export const STRINGS = {
     deleteTitle: 'Sil',
     literalWord: 'Birebir',
     langToggle: 'EN',
+    generateMore: '✨ Daha Fazla Bul',
+    generatingMore: 'Yeni öneriler aranıyor...',
+    exhaustedDefault:
+      'Bu his için literatürde bulabildiklerimin sonuna geldim — yukarıdakiler en isabetli karşılıklar.',
     steps: {
       parse: 'Cümlen çözümleniyor',
       scanWorld: 'Dünya dilleri ve kültürleri taranıyor',
@@ -80,6 +84,10 @@ export const STRINGS = {
     deleteTitle: 'Delete',
     literalWord: 'Literally',
     langToggle: 'TR',
+    generateMore: '✨ Generate More',
+    generatingMore: 'Searching for new suggestions...',
+    exhaustedDefault:
+      "I've reached the end of what world literature offers for this feeling — the results above are the best matches.",
     steps: {
       parse: 'Analyzing your sentence',
       scanWorld: 'Scanning world languages and cultures',

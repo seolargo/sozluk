@@ -87,6 +87,8 @@ function App() {
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [discoverError, setDiscoverError] = useState('');
   const [addedTerms, setAddedTerms] = useState(new Set());
+  const [exhausted, setExhausted] = useState(false);
+  const [exhaustedNote, setExhaustedNote] = useState('');
 
   const regionNames = useMemo(
     () => new Intl.DisplayNames([lang], { type: 'region' }),
@@ -141,30 +143,54 @@ function App() {
     fetchWords(query);
   }
 
-  async function handleDiscover(e) {
-    e.preventDefault();
+  async function runDiscover({ more = false } = {}) {
     if (!feeling.trim() || discoverLoading) return;
     setDiscoverLoading(true);
     setDiscoverError('');
-    setDiscoverResults([]);
+    if (!more) {
+      setDiscoverResults([]);
+      setExhausted(false);
+      setExhaustedNote('');
+    }
     try {
       const res = await fetch('/api/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: feeling, culture, person, lang }),
+        body: JSON.stringify({
+          query: feeling,
+          culture,
+          person,
+          lang,
+          exclude: more ? discoverResults.map((r) => r.term) : [],
+        }),
       });
       const data = await res.json();
       if (!res.ok) {
         setDiscoverError(data.error || t.genericError);
       } else {
-        setDiscoverResults(data.results || []);
-        setAddedTerms(new Set());
+        const seen = new Set(
+          more ? discoverResults.map((r) => r.term.toLowerCase()) : []
+        );
+        const fresh = (data.results || []).filter(
+          (r) => !seen.has(r.term.toLowerCase())
+        );
+        setDiscoverResults((prev) => (more ? [...prev, ...fresh] : fresh));
+        if (!more) setAddedTerms(new Set());
+        if (data.exhausted) {
+          setExhausted(true);
+          setExhaustedNote(data.note || t.exhaustedDefault);
+        }
       }
     } catch {
       setDiscoverError(t.serverUnreachable);
     } finally {
       setDiscoverLoading(false);
     }
+  }
+
+  function handleDiscover(e) {
+    e.preventDefault();
+    runDiscover();
   }
 
   async function handleAddResult(r) {
@@ -293,6 +319,19 @@ function App() {
             </li>
           ))}
         </ul>
+        {discoverResults.length > 0 && !discoverLoading && (
+          exhausted ? (
+            <p className="exhausted-note">🏁 {exhaustedNote}</p>
+          ) : (
+            <button
+              type="button"
+              className="more-btn"
+              onClick={() => runDiscover({ more: true })}
+            >
+              {t.generateMore}
+            </button>
+          )
+        )}
       </section>
 
       <form className="add-form" onSubmit={handleSubmit}>

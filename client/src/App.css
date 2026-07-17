@@ -351,6 +351,28 @@ button:hover {
   font-style: italic;
 }
 
+.more-btn {
+  width: 100%;
+  margin-top: 0.75rem;
+  background: #fff;
+  color: #4f46e5;
+  border: 1px dashed #a5b4fc;
+}
+
+.more-btn:hover {
+  background: #eef2ff;
+}
+
+.exhausted-note {
+  margin: 0.75rem 0 0;
+  padding: 0.75rem 1rem;
+  background: #fffbeb;
+  border: 1px solid #fde68a;
+  border-radius: 8px;
+  color: #92400e;
+  font-size: 0.95rem;
+}
+
 .add-result-btn {
   padding: 0.4rem 0.9rem;
   font-size: 0.9rem;

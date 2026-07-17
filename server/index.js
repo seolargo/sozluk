@@ -73,8 +73,18 @@ app.delete('/api/words/:id', async (req, res) => {
 const DISCOVER_SCHEMA = {
   type: 'object',
   additionalProperties: false,
-  required: ['results'],
+  required: ['results', 'exhausted', 'note'],
   properties: {
+    exhausted: {
+      type: 'boolean',
+      description:
+        'Kullanıcının hissine gerçekten uyan, daha önce önerilmemiş anlamlı sonuç kalmadıysa true. Zorlama eşleştirme yapmak yerine true döndür.',
+    },
+    note: {
+      type: 'string',
+      description:
+        'exhausted true ise kullanıcıya kısa ve samimi bir açıklama (çıktı dilinde); değilse boş string.',
+    },
     results: {
       type: 'array',
       items: {
@@ -114,7 +124,8 @@ Diğer kurallar:
 - Normalde 5-8 sonuç döndür; kavram ailesi varsa gerektiği kadar artır. En isabetli sonucu en başa koy.
 - Farklı dillerden ve kültürlerden seçmeye çalış; sadece tek bir dile yaslanma. Ancak bir dilin kavram ailesi varsa o aileyi bölme, tamamını ver.
 - Bir kelimenin aynı dilde birden çok anlam katmanı/nüansı varsa bunları "meaning" alanında açıkça belirt.
-- Gerçekten var olan kelime ve deyimleri öner; uydurma. Emin olmadığın bir şeyi dahil etme.`;
+- Gerçekten var olan kelime ve deyimleri öner; uydurma. Emin olmadığın bir şeyi dahil etme.
+- "exhausted" alanı: Hisse gerçekten uyan sonuç bulabildiysen false ve "note" boş string. Anlamlı yeni sonuç kalmadıysa (özellikle devam aramalarında) sonuçları ZORLAMA: az sonuç veya boş "results" döndür, "exhausted" alanını true yap ve "note" alanına kullanıcıya kısa, samimi bir açıklama yaz (örn. bu his için literatürdeki en bilinen karşılıkların artık verildiğini söyle). Alakasız veya zayıf eşleşme üretmek, sınırı kabul etmekten çok daha kötüdür.`;
 
 function outputLangRule(lang) {
   return lang === 'en'
@@ -145,6 +156,9 @@ app.post('/api/discover', async (req, res) => {
   const culture = (req.body?.culture || '').trim();
   const person = (req.body?.person || '').trim();
   const lang = req.body?.lang === 'en' ? 'en' : 'tr';
+  const exclude = Array.isArray(req.body?.exclude)
+    ? req.body.exclude.filter((x) => typeof x === 'string').slice(0, 200)
+    : [];
   const err = (tr, en) => (lang === 'en' ? en : tr);
   if (!query) {
     return res.status(400).json({
@@ -168,7 +182,14 @@ app.post('/api/discover', async (req, res) => {
       model: 'gpt-5',
       messages: [
         { role: 'system', content: buildSystemPrompt({ culture, person, lang }) },
-        { role: 'user', content: query },
+        {
+          role: 'user',
+          content: exclude.length
+            ? `${query}\n\n[Devam araması] Şu öneriler daha önce verildi; bunları, çevirilerini ve çok yakın varyantlarını TEKRARLAMA:\n${exclude
+                .map((x) => `- ${x}`)
+                .join('\n')}\nDaha önce bahsedilmemiş, farklı dillerden/uygarlıklardan yeni öneriler bul. Gerçekten uyan yeni bir şey kalmadıysa exhausted=true döndür ve zorlamana gerek yok.`
+            : query,
+        },
       ],
       response_format: {
         type: 'json_schema',

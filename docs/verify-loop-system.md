@@ -97,6 +97,23 @@ Context windows get compacted and sessions end — an assumption held only "in m
 - **On every no-argument invocation:** read the ledger first, process all OPEN rows, then the current task's claims, then write updated statuses back.
 - If a REFUTED assumption affected already-delivered work, say so explicitly and fix the work.
 
+## Cost awareness — paid calls require explicit approval, always
+
+Paid API calls (OpenAI, Anthropic, any metered service) NEVER run without the user's explicit approval. No threshold, no exceptions.
+
+Flow:
+
+1. **Run all free verification first:** reading code, running local code/tests, grep, git history, files on disk, already-captured outputs. Settle every claim you can this way.
+2. **Collect the rest into a separate "paid verification proposal" list** and present it to the user before making any paid call. One row per item:
+
+| # | Claim to verify | Planned paid call(s) | Est. call count | What it would settle |
+|---|-----------------|----------------------|-----------------|----------------------|
+| 1 | exhausted=true fires in real use | POST /api/discover continuation loop (gpt-5) | ~3-5 | closes ledger row 8 |
+
+3. **Wait for approval.** Run only the approved items, exactly as described — nothing beyond the approved count without asking again.
+4. **Unapproved or unanswered items stay UNVERIFIED** with the note "paid verification proposed, not approved" in the ledger. This is a normal, honest outcome — do not work around it with unapproved calls.
+5. Record in the journal which rounds used paid calls, so the cost of each verification stays visible.
+
 ## Environment notes
 
 - In a codebase: prefer running code/tests over reading it, and reading it over reasoning about it.

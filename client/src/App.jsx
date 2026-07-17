@@ -154,7 +154,14 @@ function App() {
               <div className="discover-head">
                 <span className="word-term">{r.term}</span>
                 <span className="badge">{r.language}</span>
-                <span className="badge badge-kind">{r.kind}</span>
+                <span
+                  className={`badge badge-kind kind-${(r.kind || '')
+                    .replaceAll('ö', 'o')
+                    .replaceAll('ü', 'u')
+                    .replaceAll('ş', 's')}`}
+                >
+                  {r.kind}
+                </span>
                 {r.pronunciation && (
                   <span className="muted pron">[{r.pronunciation}]</span>
                 )}

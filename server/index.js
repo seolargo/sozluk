@@ -84,7 +84,7 @@ const DISCOVER_SCHEMA = {
         properties: {
           term: { type: 'string', description: 'Kelime, deyim veya atasözünün orijinal hali' },
           language: { type: 'string', description: 'Dil ve varsa kültür, örn. "Portekizce", "Japonca"' },
-          kind: { type: 'string', enum: ['kelime', 'deyim', 'atasözü', 'kavram'] },
+          kind: { type: 'string', enum: ['kelime', 'deyim', 'atasözü', 'özdeyiş', 'kavram'] },
           pronunciation: { type: 'string', description: 'Türkçe okunuşu; bilinmiyorsa boş string' },
           literal: { type: 'string', description: 'Birebir çevirisi; yoksa boş string' },
           meaning: { type: 'string', description: 'Türkçe açıklaması' },
@@ -102,6 +102,13 @@ Bir dil, kullanıcının tarif ettiği kavramı birden fazla alt türe, dereceye
 - Aşk için Yunanca tek kelime yoktur; éros (tutkulu aşk), agápi (koşulsuz sevgi), philía (dostluk sevgisi), storgí (aile bağı), prágma (olgun/kalıcı aşk), philautía (öz sevgi), ludus (oyuncul flört), manía (saplantılı aşk) gibi ayrı kavramlar vardır — hissi "aşk" olan bir kullanıcıya bunların hepsi sunulmalıdır.
 - Kar için İnuit dillerinde, pirinç için Japonca'da, deve için Arapça'da, özlem türleri için Türkçe'de (özlem/hasret/dâüssıla) benzer aileler vardır.
 Böyle bir aile bulduğunda sonuç sayısı sınırını aşman serbesttir; aile üyesi atlamak, yanlış kelime önermek kadar ciddi bir hatadır.
+
+İkinci önemli kural — TÜR ÇEŞİTLİLİĞİ:
+Sonuçlar yalnızca tek kelime ve kavramlardan oluşmamalı. Her aramada, hisse uyan gerçek örnekler var olduğu sürece şu türlerden de sonuç ver:
+- atasözü (örn. Japonca "七転び八起き / nana korobi ya oki" — yedi kez düş, sekiz kez kalk),
+- deyim (örn. Fransızca "avoir le cafard" — hamamböceği olmak = içine kasvet çökmek),
+- özdeyiş/vecize (bilinen bir düşünüre, şaire veya geleneğe ait özlü söz; kaynağını "meaning" veya "why" içinde belirt).
+Mümkünse her aramada en az bir atasözü ve bir deyim/özdeyiş bulunmalı. Bunlar için de uydurma yasağı aynen geçerlidir.
 
 Diğer kurallar:
 - Normalde 5-8 sonuç döndür; kavram ailesi varsa gerektiği kadar artır. En isabetli sonucu en başa koy.

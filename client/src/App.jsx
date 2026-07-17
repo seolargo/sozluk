@@ -8,6 +8,7 @@ import {
   SACRED_TEXT_GROUPS,
 } from './cultures';
 import { STRINGS } from './i18n';
+import { MOCK_QUERY, MOCK_RESULTS, MOCK_TEXT } from './devMock';
 
 const API = '/api/words';
 
@@ -141,6 +142,18 @@ function App() {
 
   function copyOne(r) {
     copyText(r.term, formatResult(r));
+  }
+
+  function devFill() {
+    setFeeling(MOCK_QUERY);
+    setSacredText(MOCK_TEXT);
+    setCulture('');
+    setPerson('');
+    setDiscoverResults(MOCK_RESULTS);
+    setAddedTerms(new Set([MOCK_RESULTS[MOCK_RESULTS.length - 1].term]));
+    setDiscoverError('');
+    setExhausted(false);
+    setExhaustedNote('');
   }
 
   function copyAll() {
@@ -292,6 +305,15 @@ function App() {
       <button className="lang-toggle" onClick={toggleLang} title="Türkçe / English">
         {t.langToggle}
       </button>
+      {import.meta.env.DEV && (
+        <button
+          className="dev-fill"
+          onClick={devFill}
+          title="UI'ı örnek verilerle doldur (yalnızca dev)"
+        >
+          🧪 Dev Fill
+        </button>
+      )}
       <header>
         <h1>{t.title}</h1>
         <p className="subtitle">{t.subtitle}</p>

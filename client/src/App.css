@@ -32,6 +32,21 @@ body {
   background: #eef2ff;
 }
 
+.dev-fill {
+  position: absolute;
+  top: 1rem;
+  right: 4.5rem;
+  padding: 0.35rem 0.8rem;
+  font-size: 0.85rem;
+  background: #fff;
+  color: #b45309;
+  border: 1px dashed #fbbf24;
+}
+
+.dev-fill:hover {
+  background: #fffbeb;
+}
+
 header {
   text-align: center;
   margin-bottom: 2rem;

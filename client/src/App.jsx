@@ -1,6 +1,8 @@
 import { useEffect, useState } from 'react';
 import './App.css';
 
+import { CULTURE_GROUPS } from './cultures';
+
 const API = '/api/words';
 
 function App() {
@@ -11,6 +13,7 @@ function App() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [feeling, setFeeling] = useState('');
+  const [culture, setCulture] = useState('');
   const [discoverResults, setDiscoverResults] = useState([]);
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [discoverError, setDiscoverError] = useState('');
@@ -64,7 +67,7 @@ function App() {
       const res = await fetch('/api/discover', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ query: feeling }),
+        body: JSON.stringify({ query: feeling, culture }),
       });
       const data = await res.json();
       if (!res.ok) {
@@ -119,9 +122,27 @@ function App() {
             rows={3}
             placeholder="Örn: Bir daha asla dönmeyecek güzel günlere karşı tatlı-buruk bir özlem duyuyorum..."
           />
-          <button type="submit" disabled={discoverLoading}>
-            {discoverLoading ? 'Aranıyor...' : 'Kavram Ara'}
-          </button>
+          <div className="discover-controls">
+            <select
+              value={culture}
+              onChange={(e) => setCulture(e.target.value)}
+              title="Aramayı bir ülke veya medeniyetle sınırla"
+            >
+              <option value="">🌍 Tüm dünya</option>
+              {CULTURE_GROUPS.map((group) => (
+                <optgroup key={group.label} label={group.label}>
+                  {group.options.map((c) => (
+                    <option key={c} value={c}>
+                      {c}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
+            <button type="submit" disabled={discoverLoading}>
+              {discoverLoading ? 'Aranıyor...' : 'Kavram Ara'}
+            </button>
+          </div>
         </form>
         {discoverError && <p className="error">{discoverError}</p>}
         {discoverLoading && (

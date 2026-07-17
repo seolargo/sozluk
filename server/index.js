@@ -105,6 +105,7 @@ Kurallar:
 
 app.post('/api/discover', async (req, res) => {
   const query = (req.body?.query || '').trim();
+  const culture = (req.body?.culture || '').trim();
   if (!query) {
     return res.status(400).json({ error: 'Bir his veya düşünce tarifi yazmalısın.' });
   }
@@ -118,7 +119,12 @@ app.post('/api/discover', async (req, res) => {
     const completion = await client.chat.completions.create({
       model: 'gpt-5',
       messages: [
-        { role: 'system', content: DISCOVER_SYSTEM },
+        {
+          role: 'system',
+          content: culture
+            ? `${DISCOVER_SYSTEM}\n\nÖnemli: Kullanıcı belirli bir ülke veya medeniyet seçti: ${culture}. Tüm sonuçları yalnızca bu ülkenin/medeniyetin dillerinden ve geleneğinden seç. Tarihî bir medeniyet seçildiyse (örn. İnka, Antik Mısır, Sümer) o medeniyetin kendi dilinden (Keçuva, Eski Mısırca, Sümerce vb.) ve kültürel mirasından kavramlar öner. "Farklı dillerden seçme" kuralı bu durumda geçerli değildir; seçilen kültürün içinde çeşitlilik göster (kelime, deyim, atasözü karışık olabilir).`
+            : DISCOVER_SYSTEM,
+        },
         { role: 'user', content: query },
       ],
       response_format: {

@@ -105,6 +105,44 @@ function App() {
   const [exhausted, setExhausted] = useState(false);
   const [exhaustedNote, setExhaustedNote] = useState('');
   const [isMoreSearch, setIsMoreSearch] = useState(false);
+  const [copiedKey, setCopiedKey] = useState('');
+  const copyTimerRef = useRef(null);
+
+  function formatResult(r) {
+    const lines = [
+      `${r.term} — ${r.language} (${t.kinds[r.kind] || r.kind})${
+        r.pronunciation ? ` [${r.pronunciation}]` : ''
+      }`,
+    ];
+    if (r.literal) lines.push(`${t.literalLabel} ${r.literal}`);
+    lines.push(r.meaning);
+    if (r.why) lines.push(`${t.whyLabel}: ${r.why}`);
+    return lines.join('\n');
+  }
+
+  async function copyText(key, textToCopy) {
+    try {
+      await navigator.clipboard.writeText(textToCopy);
+      setCopiedKey(key);
+      clearTimeout(copyTimerRef.current);
+      copyTimerRef.current = setTimeout(() => setCopiedKey(''), 1500);
+    } catch {
+      // pano erişimi reddedildi; sessiz geç
+    }
+  }
+
+  function copyOne(r) {
+    copyText(r.term, formatResult(r));
+  }
+
+  function copyAll() {
+    const all = [
+      `${t.feelingLabel}: ${feeling.trim()}`,
+      '',
+      ...discoverResults.map((r) => formatResult(r)),
+    ].join('\n\n');
+    copyText('__all__', all);
+  }
 
   const regionNames = useMemo(
     () => new Intl.DisplayNames([lang], { type: 'region' }),
@@ -325,6 +363,13 @@ function App() {
             isMore={isMoreSearch}
           />
         )}
+        {discoverResults.length > 0 && (
+          <div className="results-toolbar">
+            <button type="button" className="copy-btn" onClick={copyAll}>
+              {copiedKey === '__all__' ? t.copiedAll : t.copyAll}
+            </button>
+          </div>
+        )}
         <ul className="discover-list">
           {discoverResults.map((r) => (
             <li key={`${r.language}-${r.term}`} className="discover-card">
@@ -350,13 +395,22 @@ function App() {
               )}
               <p className="word-def">{r.meaning}</p>
               <p className="discover-why">{r.why}</p>
-              <button
-                className="add-result-btn"
-                onClick={() => handleAddResult(r)}
-                disabled={addedTerms.has(r.term)}
-              >
-                {addedTerms.has(r.term) ? t.added : t.addToDict}
-              </button>
+              <div className="card-actions">
+                <button
+                  className="add-result-btn"
+                  onClick={() => handleAddResult(r)}
+                  disabled={addedTerms.has(r.term)}
+                >
+                  {addedTerms.has(r.term) ? t.added : t.addToDict}
+                </button>
+                <button
+                  type="button"
+                  className="copy-btn"
+                  onClick={() => copyOne(r)}
+                >
+                  {copiedKey === r.term ? t.copied : t.copy}
+                </button>
+              </div>
             </li>
           ))}
         </ul>

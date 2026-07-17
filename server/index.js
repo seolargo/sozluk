@@ -134,25 +134,32 @@ function outputLangRule(lang) {
     : '\n\nÇıktı dili: Tüm serbest metin alanlarını ("language", "pronunciation", "literal", "meaning", "why") TÜRKÇE yaz. Okunuşları Türkçe fonetiğiyle ver.';
 }
 
+const EXHAUSTED_RULE = `
+"exhausted" alanı: Uyan sonuç bulabildiysen false ve "note" boş string. Anlamlı sonuç bulamadıysan veya kalmadıysa ZORLAMA: az sonuç veya boş "results" döndür, "exhausted" alanını true yap ve "note" alanına kullanıcıya kısa, samimi bir açıklama yaz. Alakasız veya zayıf eşleşme üretmek, sınırı kabul etmekten çok daha kötüdür.`;
+
 function buildSystemPrompt({ culture, person, text, lang }) {
   if (text) {
-    return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
+    return `Sen kutsal ve kadim metinler konusunda uzman bir akademisyensin. TEK GÖREVİN: kullanıcının tarif ettiği his/düşünce ile örtüşen pasajları YALNIZCA şu metinden bulmak: ${text}.
 
-Önemli: Kullanıcı belirli bir kutsal/kadim metin seçti: ${text}. Bu durumda görevin değişir — YALNIZCA bu metinden, kullanıcının hissiyle örtüşen pasajlar, ayetler veya bölümler döndür:
+KESİN KURALLAR:
+- Başka hiçbir kaynaktan sonuç verme. Dünya dillerinden kelime, deyim, atasözü ÖNERME — bu görev kapsamında değil. Yalnızca ${text} içinden pasaj/ayet/bölüm döndür.
 - Tüm sonuçlarda "kind" alanı "pasaj" olmalı.
-- "term" alanına pasajın kendisini yaz (kısa tut; biliniyorsa orijinal dilinde veya yerleşik çevirisiyle), "language" alanına metnin adı ve orijinal dili (örn. "Kur'an-ı Kerim — Arapça"), "literal" alanına çevirisini, "meaning" alanına TAM referansı ve bağlamı (sure/ayet numarası, kitap/bölüm/ayet, bap, traktat vb.), "why" alanına kullanıcının hissiyle bağlantısını yaz.
+- "term" alanına pasajın kendisini yaz (kısa tut; biliniyorsa orijinal dilinde veya yerleşik çevirisiyle), "language" alanına metnin adı ve orijinal dili (örn. "${text} — orijinal dili"), "literal" alanına çevirisini, "meaning" alanına TAM referansı ve bağlamı (sure/ayet, kitap/bölüm/ayet, bap, traktat vb.), "why" alanına kullanıcının hissiyle bağlantısını yaz.
 - SADECE metinde gerçekten geçen pasajları ver; referansları doğru ver. Emin olmadığın pasajı dahil etme; parafraz yapıyorsan bunu belirt.
-- Bu dinî metinlere akademik ve saygılı bir dille yaklaş; yorum katman gerekiyorsa geleneksel tefsir/yorum çerçevesinde kal.
-- Hisse uyan pasaj azsa az sonuç döndür; zorlama eşleştirme yapma.`;
+- Bu metne akademik ve saygılı bir dille yaklaş; yorum katman gerekiyorsa geleneksel tefsir/yorum çerçevesinde kal.
+- Bu metinde hisse uyan pasaj bulamıyorsan başka kaynağa SAPMA; exhausted kuralını uygula.
+${EXHAUSTED_RULE}${outputLangRule(lang)}`;
   }
   if (person) {
-    return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
+    return `Sen tarihî kişilerin sözleri ve yazıları konusunda uzman bir araştırmacısın. TEK GÖREVİN: kullanıcının tarif ettiği his/düşünce ile örtüşen, YALNIZCA şu kişiye ait sözleri bulmak: ${person}.
 
-Önemli: Kullanıcı belirli bir kişi seçti: ${person}. Bu durumda görevin değişir — dünya dillerinden kelime aramak yerine, YALNIZCA bu kişiye ait sözler, özdeyişler ve dizeler döndür:
+KESİN KURALLAR:
+- Başka kişilerden veya dünya dillerinden sonuç verme. Yalnızca ${person}'e ait kayıtlı sözler, özdeyişler ve dizeler döndür.
 - Tüm sonuçlarda "kind" alanı "özdeyiş" olmalı.
-- "term" alanına sözün kendisini yaz (biliniyorsa orijinal dilinde), "language" alanına kişinin adı ve dili (örn. "Çiçero — Latince"), "literal" alanına birebir Türkçe çevirisini, "meaning" alanına sözün bağlamını/kaynağını (hangi eser, konuşma veya mektup), "why" alanına kullanıcının hissiyle bağlantısını yaz.
+- "term" alanına sözün kendisini yaz (biliniyorsa orijinal dilinde), "language" alanına kişinin adı ve dili (örn. "${person} — dili"), "literal" alanına çevirisini, "meaning" alanına sözün bağlamını/kaynağını (hangi eser, konuşma veya mektup), "why" alanına kullanıcının hissiyle bağlantısını yaz.
 - SADECE gerçekten kayıtlı ve bu kişiye ait sözler ver. Yaygın ama yanlış atfedilen (apokrif) sözleri dahil etme; atıf tartışmalıysa bunu "meaning" alanında açıkça belirt.
-- Hisse uyan söz sayısı azsa az sonuç döndürmen sorun değil; uydurmak veya zorlama eşleştirme yapmak ciddi hatadır.`;
+- Uyan söz bulamıyorsan başka kişiye SAPMA; exhausted kuralını uygula.
+${EXHAUSTED_RULE}${outputLangRule(lang)}`;
   }
   if (culture) {
     return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
@@ -190,17 +197,26 @@ app.post('/api/discover', async (req, res) => {
   }
   try {
     const client = new OpenAI();
+    const sysPrompt = buildSystemPrompt({ culture, person, text, lang });
     const completion = await client.chat.completions.create({
       model: 'gpt-5',
       messages: [
-        { role: 'system', content: buildSystemPrompt({ culture, person, text, lang }) },
+        { role: 'system', content: sysPrompt },
         {
           role: 'user',
-          content: exclude.length
-            ? `${query}\n\n[Devam araması] Şu öneriler daha önce verildi; bunları, çevirilerini ve çok yakın varyantlarını TEKRARLAMA:\n${exclude
-                .map((x) => `- ${x}`)
-                .join('\n')}\nDaha önce bahsedilmemiş, farklı dillerden/uygarlıklardan yeni öneriler bul. Gerçekten uyan yeni bir şey kalmadıysa exhausted=true döndür ve zorlamana gerek yok.`
-            : query,
+          content: [
+            text
+              ? `[Kaynak kısıtı: YALNIZCA "${text}" metninden pasajlar döndür.]\n`
+              : person
+                ? `[Kaynak kısıtı: YALNIZCA ${person}'e ait sözler döndür.]\n`
+                : '',
+            query,
+            exclude.length
+              ? `\n\n[Devam araması] Şu öneriler daha önce verildi; bunları, çevirilerini ve çok yakın varyantlarını TEKRARLAMA:\n${exclude
+                  .map((x) => `- ${x}`)
+                  .join('\n')}\nDaha önce bahsedilmemiş yeni öneriler bul. Gerçekten uyan yeni bir şey kalmadıysa exhausted=true döndür ve zorlamana gerek yok.`
+              : '',
+          ].join(''),
         },
       ],
       response_format: {

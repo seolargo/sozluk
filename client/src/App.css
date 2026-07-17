@@ -378,9 +378,33 @@ button:hover {
   font-size: 0.95rem;
 }
 
+.card-actions {
+  display: flex;
+  gap: 0.5rem;
+  align-items: center;
+}
+
 .add-result-btn {
   padding: 0.4rem 0.9rem;
   font-size: 0.9rem;
+}
+
+.copy-btn {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+  background: #fff;
+  color: #4b5563;
+  border: 1px solid #d1d5db;
+}
+
+.copy-btn:hover {
+  background: #f3f4f6;
+}
+
+.results-toolbar {
+  display: flex;
+  justify-content: flex-end;
+  margin-top: 1rem;
 }
 
 .add-result-btn:disabled {

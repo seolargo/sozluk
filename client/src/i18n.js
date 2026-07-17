@@ -8,7 +8,7 @@ export const STRINGS = {
       'Ne hissettiğini kendi cümlelerinle yaz; dünya dillerinden bu hissi karşılayan kelime, deyim ve atasözlerini bulalım.',
     feelingPlaceholder:
       'Örn: Bir daha asla dönmeyecek güzel günlere karşı tatlı-buruk bir özlem duyuyorum...',
-    allWorld: '🌍 Tüm dünya',
+    allWorld: '🌍 Ülke filtresi yok',
     noPerson: '🗣️ Kişi filtresi yok',
     noText: '📜 Kutsal metin filtresi yok',
     cultureTitle: 'Aramayı bir ülke veya medeniyetle sınırla',
@@ -34,6 +34,12 @@ export const STRINGS = {
     deleteTitle: 'Sil',
     literalWord: 'Birebir',
     langToggle: 'EN',
+    copy: '📋 Kopyala',
+    copied: '✓ Kopyalandı',
+    copyAll: '📋 Tümünü Kopyala',
+    copiedAll: '✓ Tümü Kopyalandı',
+    feelingLabel: 'Tarif edilen his',
+    whyLabel: 'Neden uyuyor',
     generateMore: '✨ Daha Fazla Bul',
     generatingMore: 'Yeni öneriler aranıyor...',
     exhaustedDefault:
@@ -70,7 +76,7 @@ export const STRINGS = {
       "Describe what you feel in your own words; we'll find words, idioms and proverbs from world languages that capture it.",
     feelingPlaceholder:
       'E.g.: I feel a bittersweet longing for beautiful days that will never return...',
-    allWorld: '🌍 Whole world',
+    allWorld: '🌍 No country filter',
     noPerson: '🗣️ No person filter',
     noText: '📜 No sacred text filter',
     cultureTitle: 'Limit the search to a country or civilization',
@@ -96,6 +102,12 @@ export const STRINGS = {
     deleteTitle: 'Delete',
     literalWord: 'Literally',
     langToggle: 'TR',
+    copy: '📋 Copy',
+    copied: '✓ Copied',
+    copyAll: '📋 Copy All',
+    copiedAll: '✓ All Copied',
+    feelingLabel: 'Described feeling',
+    whyLabel: 'Why it fits',
     generateMore: '✨ Generate More',
     generatingMore: 'Searching for new suggestions...',
     exhaustedDefault:

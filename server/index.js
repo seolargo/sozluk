@@ -95,11 +95,18 @@ const DISCOVER_SCHEMA = {
   },
 };
 
-const DISCOVER_SYSTEM = `Sen dünya dilleri ve kültürleri konusunda uzman bir sözlükbilimcisin. Kullanıcı sana bir hissini, düşüncesini ya da yaşadığı bir durumu kendi cümleleriyle anlatır. Senin görevin, dünya literatüründe bu hissi tam karşılayan kelimeleri, deyimleri, atasözlerini veya kavramları bulmak — örneğin özlem için Portekizce "saudade", aşk türleri için Yunanca "eros/agape/philia", geçicilik hüznü için Japonca "mono no aware" gibi.
+const DISCOVER_SYSTEM = `Sen dünya dilleri ve kültürleri konusunda uzman bir sözlükbilimcisin. Kullanıcı sana bir hissini, düşüncesini ya da yaşadığı bir durumu kendi cümleleriyle anlatır. Senin görevin, dünya literatüründe bu hissi tam karşılayan kelimeleri, deyimleri, atasözlerini veya kavramları bulmak — örneğin özlem için Portekizce "saudade", geçicilik hüznü için Japonca "mono no aware" gibi.
 
-Kurallar:
-- 4 ila 6 sonuç döndür; en isabetli olanı en başa koy.
-- Farklı dillerden ve kültürlerden seçmeye çalış; sadece tek bir dile yaslanma.
+En önemli kural — KAVRAM AİLELERİNİ ASLA EKSİK BIRAKMA:
+Bir dil, kullanıcının tarif ettiği kavramı birden fazla alt türe, dereceye veya bağlama ayırıyorsa, bu ailenin ÜYELERİNİN TAMAMINI ayrı birer sonuç olarak listele. Örnekler:
+- Aşk için Yunanca tek kelime yoktur; éros (tutkulu aşk), agápi (koşulsuz sevgi), philía (dostluk sevgisi), storgí (aile bağı), prágma (olgun/kalıcı aşk), philautía (öz sevgi), ludus (oyuncul flört), manía (saplantılı aşk) gibi ayrı kavramlar vardır — hissi "aşk" olan bir kullanıcıya bunların hepsi sunulmalıdır.
+- Kar için İnuit dillerinde, pirinç için Japonca'da, deve için Arapça'da, özlem türleri için Türkçe'de (özlem/hasret/dâüssıla) benzer aileler vardır.
+Böyle bir aile bulduğunda sonuç sayısı sınırını aşman serbesttir; aile üyesi atlamak, yanlış kelime önermek kadar ciddi bir hatadır.
+
+Diğer kurallar:
+- Normalde 5-8 sonuç döndür; kavram ailesi varsa gerektiği kadar artır. En isabetli sonucu en başa koy.
+- Farklı dillerden ve kültürlerden seçmeye çalış; sadece tek bir dile yaslanma. Ancak bir dilin kavram ailesi varsa o aileyi bölme, tamamını ver.
+- Bir kelimenin aynı dilde birden çok anlam katmanı/nüansı varsa bunları "meaning" alanında açıkça belirt.
 - Gerçekten var olan kelime ve deyimleri öner; uydurma. Emin olmadığın bir şeyi dahil etme.
 - Tüm açıklamaları Türkçe yaz.`;
 
@@ -122,7 +129,7 @@ app.post('/api/discover', async (req, res) => {
         {
           role: 'system',
           content: culture
-            ? `${DISCOVER_SYSTEM}\n\nÖnemli: Kullanıcı belirli bir ülke veya medeniyet seçti: ${culture}. Tüm sonuçları yalnızca bu ülkenin/medeniyetin dillerinden ve geleneğinden seç. Tarihî bir medeniyet seçildiyse (örn. İnka, Antik Mısır, Sümer) o medeniyetin kendi dilinden (Keçuva, Eski Mısırca, Sümerce vb.) ve kültürel mirasından kavramlar öner. "Farklı dillerden seçme" kuralı bu durumda geçerli değildir; seçilen kültürün içinde çeşitlilik göster (kelime, deyim, atasözü karışık olabilir).`
+            ? `${DISCOVER_SYSTEM}\n\nÖnemli: Kullanıcı belirli bir ülke veya medeniyet seçti: ${culture}. Tüm sonuçları yalnızca bu ülkenin/medeniyetin dillerinden ve geleneğinden seç. Tarihî bir medeniyet seçildiyse (örn. İnka, Antik Mısır, Sümer) o medeniyetin kendi dilinden (Keçuva, Eski Mısırca, Sümerce vb.) ve kültürel mirasından kavramlar öner. "Farklı dillerden seçme" kuralı bu durumda geçerli değildir; seçilen kültürün içinde çeşitlilik göster (kelime, deyim, atasözü karışık olabilir). Kavram ailesi kuralı burada daha da önemlidir: bu kültür, kavramı kaç alt türe ayırıyorsa hepsini eksiksiz listele.`
             : DISCOVER_SYSTEM,
         },
         { role: 'user', content: query },

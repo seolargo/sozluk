@@ -19,6 +19,9 @@ A dropdown scopes the search to any of ~195 countries (localized names via `Intl
 ### 🗣️ Famous-person quotes
 A second dropdown restricts results to the recorded sayings of ~85 notable figures (Atatürk, Cicero, Rumi, Queen Elizabeth I, Einstein...). The model is instructed to return only genuinely attributed quotes with their source (work, speech, or letter), to flag disputed attributions, and never to include apocryphal ones.
 
+### 📜 Sacred and ancient texts
+A third dropdown scopes the search to a single sacred or ancient text — the Quran, New Testament, Old Testament/Tanakh, Talmud, Bhagavad Gita, Tao Te Ching, Epic of Gilgamesh and more (24 texts across 6 traditions). Results come back as **passages** with exact references (surah/verse, book/chapter/verse, tractate...), and the model is instructed to quote only what the text actually contains. In unfiltered searches, strongly matching scripture passages may appear alongside words and proverbs.
+
 ### 👨‍👩‍👧 Concept families are never left incomplete
 If a language splits the concept into multiple variants — Greek's eight kinds of love, Turkish's shades of longing — the prompt requires **every member of the family** to be returned as a separate result, even beyond the normal result count.
 
@@ -87,6 +90,7 @@ Both servers start with one command; the API auto-reloads on changes (`node --wa
   "query": "I feel a bittersweet longing...",
   "culture": "Japan",            // optional country/civilization filter
   "person": "Cicero",            // optional famous-person filter (overrides culture)
+  "text": "The Talmud",          // optional sacred-text filter (overrides person & culture)
   "lang": "en",                  // "tr" | "en" — output language
   "exclude": ["saudade", "..."]  // terms already shown (for Generate More)
 }
@@ -112,4 +116,4 @@ Response (schema-enforced via OpenAI structured outputs, `strict: true`):
 }
 ```
 
-`kind` is a fixed Turkish enum (`kelime`, `deyim`, `atasözü`, `özdeyiş`, `kavram`) mapped to localized labels client-side. When `exhausted` is `true`, `note` carries the model's explanation that the literature has been covered for this feeling.
+`kind` is a fixed Turkish enum (`kelime`, `deyim`, `atasözü`, `özdeyiş`, `kavram`, `pasaj`) mapped to localized labels client-side. When `exhausted` is `true`, `note` carries the model's explanation that the literature has been covered for this feeling.

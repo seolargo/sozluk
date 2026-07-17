@@ -88,6 +88,63 @@ export const COUNTRY_GROUPS = [
   },
 ];
 
+export const SACRED_TEXT_GROUPS = [
+  {
+    label: { tr: 'İslam', en: 'Islam' },
+    options: [
+      { tr: "Kur'an-ı Kerim", en: 'The Quran' },
+      { tr: 'Hadis Külliyatı (Buhârî, Müslim...)', en: 'Hadith Collections (Bukhari, Muslim...)' },
+      { tr: 'Mesnevî (Mevlânâ)', en: 'The Masnavi (Rumi)' },
+    ],
+  },
+  {
+    label: { tr: 'Yahudilik & Eski Ahit', en: 'Judaism & Old Testament' },
+    options: [
+      { tr: 'Eski Ahit / Tanah', en: 'Old Testament / Tanakh' },
+      { tr: 'Tevrat (Tora)', en: 'The Torah' },
+      { tr: 'Zebur (Mezmurlar)', en: 'The Psalms' },
+      { tr: "Süleyman'ın Özdeyişleri", en: 'Book of Proverbs' },
+      { tr: 'Vaiz (Kohelet)', en: 'Ecclesiastes' },
+      { tr: 'Talmud', en: 'The Talmud' },
+      { tr: 'Zohar (Kabala)', en: 'The Zohar (Kabbalah)' },
+    ],
+  },
+  {
+    label: { tr: 'Hristiyanlık', en: 'Christianity' },
+    options: [
+      { tr: 'İncil (Yeni Ahit)', en: 'New Testament' },
+      { tr: 'Dağdaki Vaaz', en: 'Sermon on the Mount' },
+    ],
+  },
+  {
+    label: { tr: 'Hint & Budist Gelenekler', en: 'Indian & Buddhist Traditions' },
+    options: [
+      { tr: 'Bhagavad Gita', en: 'Bhagavad Gita' },
+      { tr: 'Vedalar', en: 'The Vedas' },
+      { tr: 'Upanişadlar', en: 'The Upanishads' },
+      { tr: 'Dhammapada', en: 'The Dhammapada' },
+      { tr: 'Guru Granth Sahib', en: 'Guru Granth Sahib' },
+    ],
+  },
+  {
+    label: { tr: 'Doğu Asya', en: 'East Asia' },
+    options: [
+      { tr: 'Tao Te Ching', en: 'Tao Te Ching' },
+      { tr: "Konfüçyüs'ün Analektleri", en: 'The Analects of Confucius' },
+      { tr: 'İ Çing (Değişimler Kitabı)', en: 'I Ching (Book of Changes)' },
+    ],
+  },
+  {
+    label: { tr: 'Diğer Kadim Metinler', en: 'Other Ancient Texts' },
+    options: [
+      { tr: 'Avesta (Zerdüştlük)', en: 'The Avesta (Zoroastrianism)' },
+      { tr: 'Mısır Ölüler Kitabı', en: 'Egyptian Book of the Dead' },
+      { tr: 'Gılgamış Destanı', en: 'Epic of Gilgamesh' },
+      { tr: 'Popol Vuh (Maya)', en: 'Popol Vuh (Maya)' },
+    ],
+  },
+];
+
 export const PERSON_GROUPS = [
   {
     label: { tr: 'Türk Büyükleri', en: 'Turkish Greats' },

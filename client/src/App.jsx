@@ -1,13 +1,27 @@
 import { useEffect, useMemo, useRef, useState } from 'react';
 import './App.css';
 
-import { CIVILIZATIONS, COUNTRY_GROUPS, PERSON_GROUPS } from './cultures';
+import {
+  CIVILIZATIONS,
+  COUNTRY_GROUPS,
+  PERSON_GROUPS,
+  SACRED_TEXT_GROUPS,
+} from './cultures';
 import { STRINGS } from './i18n';
 
 const API = '/api/words';
 
-function loaderSteps(t, culture, person) {
+function loaderSteps(t, culture, person, sacredText) {
   const s = t.steps;
+  if (sacredText) {
+    return [
+      { at: 0, label: s.parse },
+      { at: 4, label: s.scanText(sacredText) },
+      { at: 14, label: s.matchPassages },
+      { at: 28, label: s.checkRefs },
+      { at: 45, label: s.translating },
+    ];
+  }
   if (person) {
     return [
       { at: 0, label: s.parse },
@@ -26,7 +40,7 @@ function loaderSteps(t, culture, person) {
   ];
 }
 
-function DiscoverLoader({ t, culture, person, isMore }) {
+function DiscoverLoader({ t, culture, person, sacredText, isMore }) {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(Date.now());
 
@@ -38,7 +52,7 @@ function DiscoverLoader({ t, culture, person, isMore }) {
     return () => clearInterval(timer);
   }, []);
 
-  const steps = loaderSteps(t, culture, person);
+  const steps = loaderSteps(t, culture, person, sacredText);
   const activeIndex = steps.reduce(
     (acc, s, i) => (elapsed >= s.at ? i : acc),
     0
@@ -83,6 +97,7 @@ function App() {
   const [feeling, setFeeling] = useState('');
   const [culture, setCulture] = useState('');
   const [person, setPerson] = useState('');
+  const [sacredText, setSacredText] = useState('');
   const [discoverResults, setDiscoverResults] = useState([]);
   const [discoverLoading, setDiscoverLoading] = useState(false);
   const [discoverError, setDiscoverError] = useState('');
@@ -103,6 +118,7 @@ function App() {
     // Seçili filtre adları dile bağlı; karışıklığı önlemek için sıfırla
     setCulture('');
     setPerson('');
+    setSacredText('');
   }
 
   async function fetchWords(q = '') {
@@ -162,6 +178,7 @@ function App() {
           query: feeling,
           culture,
           person,
+          text: sacredText,
           lang,
           exclude: more ? discoverResults.map((r) => r.term) : [],
         }),
@@ -277,6 +294,22 @@ function App() {
                 </optgroup>
               ))}
             </select>
+            <select
+              value={sacredText}
+              onChange={(e) => setSacredText(e.target.value)}
+              title={t.textTitle}
+            >
+              <option value="">{t.noText}</option>
+              {SACRED_TEXT_GROUPS.map((group) => (
+                <optgroup key={group.label.en} label={group.label[lang]}>
+                  {group.options.map((x) => (
+                    <option key={x.tr} value={x[lang]}>
+                      {x[lang]}
+                    </option>
+                  ))}
+                </optgroup>
+              ))}
+            </select>
             <button type="submit" disabled={discoverLoading}>
               {discoverLoading ? t.searching : t.searchBtn}
             </button>
@@ -288,6 +321,7 @@ function App() {
             t={t}
             culture={culture}
             person={person}
+            sacredText={sacredText}
             isMore={isMoreSearch}
           />
         )}

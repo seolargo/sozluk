@@ -340,6 +340,11 @@ button:hover {
   color: #0284c7;
 }
 
+.kind-pasaj {
+  background: #fdf4ff;
+  color: #a21caf;
+}
+
 .pron {
   font-size: 0.85rem;
 }

@@ -94,7 +94,7 @@ const DISCOVER_SCHEMA = {
         properties: {
           term: { type: 'string', description: 'Kelime, deyim veya atasözünün orijinal hali' },
           language: { type: 'string', description: 'Dil ve varsa kültür, örn. "Portekizce", "Japonca"' },
-          kind: { type: 'string', enum: ['kelime', 'deyim', 'atasözü', 'özdeyiş', 'kavram'] },
+          kind: { type: 'string', enum: ['kelime', 'deyim', 'atasözü', 'özdeyiş', 'kavram', 'pasaj'] },
           pronunciation: { type: 'string', description: 'Türkçe okunuşu; bilinmiyorsa boş string' },
           literal: { type: 'string', description: 'Birebir çevirisi; yoksa boş string' },
           meaning: { type: 'string', description: 'Türkçe açıklaması' },
@@ -117,8 +117,9 @@ Böyle bir aile bulduğunda sonuç sayısı sınırını aşman serbesttir; aile
 Sonuçlar yalnızca tek kelime ve kavramlardan oluşmamalı. Her aramada, hisse uyan gerçek örnekler var olduğu sürece şu türlerden de sonuç ver:
 - atasözü (örn. Japonca "七転び八起き / nana korobi ya oki" — yedi kez düş, sekiz kez kalk),
 - deyim (örn. Fransızca "avoir le cafard" — hamamböceği olmak = içine kasvet çökmek),
-- özdeyiş/vecize (bilinen bir düşünüre, şaire veya geleneğe ait özlü söz; kaynağını "meaning" veya "why" içinde belirt).
-Mümkünse her aramada en az bir atasözü ve bir deyim/özdeyiş bulunmalı. Bunlar için de uydurma yasağı aynen geçerlidir.
+- özdeyiş/vecize (bilinen bir düşünüre, şaire veya geleneğe ait özlü söz; kaynağını "meaning" veya "why" içinde belirt),
+- pasaj (kutsal ve kadim metinlerden: Kur'an ayeti, İncil veya Eski Ahit pasajı, Talmud'dan bir söz, Bhagavad Gita, Tao Te Ching vb. — tam referansıyla: sure/ayet, kitap/bölüm/ayet, bap gibi).
+Mümkünse her aramada en az bir atasözü ve bir deyim/özdeyiş bulunmalı; hisse güçlü uyan bir kutsal metin pasajı varsa onu da dahil et. Bunlar için de uydurma yasağı aynen geçerlidir.
 
 Diğer kurallar:
 - Normalde 5-8 sonuç döndür; kavram ailesi varsa gerektiği kadar artır. En isabetli sonucu en başa koy.
@@ -133,7 +134,17 @@ function outputLangRule(lang) {
     : '\n\nÇıktı dili: Tüm serbest metin alanlarını ("language", "pronunciation", "literal", "meaning", "why") TÜRKÇE yaz. Okunuşları Türkçe fonetiğiyle ver.';
 }
 
-function buildSystemPrompt({ culture, person, lang }) {
+function buildSystemPrompt({ culture, person, text, lang }) {
+  if (text) {
+    return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
+
+Önemli: Kullanıcı belirli bir kutsal/kadim metin seçti: ${text}. Bu durumda görevin değişir — YALNIZCA bu metinden, kullanıcının hissiyle örtüşen pasajlar, ayetler veya bölümler döndür:
+- Tüm sonuçlarda "kind" alanı "pasaj" olmalı.
+- "term" alanına pasajın kendisini yaz (kısa tut; biliniyorsa orijinal dilinde veya yerleşik çevirisiyle), "language" alanına metnin adı ve orijinal dili (örn. "Kur'an-ı Kerim — Arapça"), "literal" alanına çevirisini, "meaning" alanına TAM referansı ve bağlamı (sure/ayet numarası, kitap/bölüm/ayet, bap, traktat vb.), "why" alanına kullanıcının hissiyle bağlantısını yaz.
+- SADECE metinde gerçekten geçen pasajları ver; referansları doğru ver. Emin olmadığın pasajı dahil etme; parafraz yapıyorsan bunu belirt.
+- Bu dinî metinlere akademik ve saygılı bir dille yaklaş; yorum katman gerekiyorsa geleneksel tefsir/yorum çerçevesinde kal.
+- Hisse uyan pasaj azsa az sonuç döndür; zorlama eşleştirme yapma.`;
+  }
   if (person) {
     return `${DISCOVER_SYSTEM}${outputLangRule(lang)}
 
@@ -155,6 +166,7 @@ app.post('/api/discover', async (req, res) => {
   const query = (req.body?.query || '').trim();
   const culture = (req.body?.culture || '').trim();
   const person = (req.body?.person || '').trim();
+  const text = (req.body?.text || '').trim();
   const lang = req.body?.lang === 'en' ? 'en' : 'tr';
   const exclude = Array.isArray(req.body?.exclude)
     ? req.body.exclude.filter((x) => typeof x === 'string').slice(0, 200)
@@ -181,7 +193,7 @@ app.post('/api/discover', async (req, res) => {
     const completion = await client.chat.completions.create({
       model: 'gpt-5',
       messages: [
-        { role: 'system', content: buildSystemPrompt({ culture, person, lang }) },
+        { role: 'system', content: buildSystemPrompt({ culture, person, text, lang }) },
         {
           role: 'user',
           content: exclude.length

@@ -1,0 +1,226 @@
+* {
+  box-sizing: border-box;
+}
+
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+  background: #f6f7f9;
+  color: #1f2328;
+}
+
+.container {
+  max-width: 640px;
+  margin: 0 auto;
+  padding: 2rem 1rem 4rem;
+}
+
+header {
+  text-align: center;
+  margin-bottom: 2rem;
+}
+
+h1 {
+  margin: 0;
+  font-size: 2.2rem;
+}
+
+.subtitle {
+  color: #6b7280;
+  margin: 0.25rem 0 0;
+}
+
+.add-form {
+  display: flex;
+  gap: 0.5rem;
+  margin-bottom: 1rem;
+}
+
+.add-form input {
+  flex: 1;
+}
+
+input {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  background: #fff;
+}
+
+input:focus {
+  outline: 2px solid #6366f1;
+  border-color: transparent;
+}
+
+.search {
+  width: 100%;
+  margin-bottom: 1.5rem;
+}
+
+button {
+  padding: 0.65rem 1.2rem;
+  border: none;
+  border-radius: 8px;
+  background: #6366f1;
+  color: #fff;
+  font-size: 1rem;
+  cursor: pointer;
+}
+
+button:hover {
+  background: #4f46e5;
+}
+
+.word-list {
+  list-style: none;
+  padding: 0;
+  margin: 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.word-card {
+  display: flex;
+  justify-content: space-between;
+  align-items: flex-start;
+  gap: 1rem;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+}
+
+.word-term {
+  font-weight: 700;
+  font-size: 1.1rem;
+}
+
+.word-def {
+  margin: 0.35rem 0 0;
+  color: #4b5563;
+}
+
+.delete-btn {
+  background: transparent;
+  color: #9ca3af;
+  padding: 0.25rem 0.5rem;
+  font-size: 0.9rem;
+}
+
+.delete-btn:hover {
+  background: #fee2e2;
+  color: #dc2626;
+}
+
+.muted {
+  color: #9ca3af;
+  text-align: center;
+}
+
+.discover {
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 12px;
+  padding: 1.25rem;
+  margin-bottom: 2rem;
+}
+
+.discover h2 {
+  margin: 0 0 0.25rem;
+  font-size: 1.25rem;
+}
+
+.discover-hint {
+  text-align: left;
+  margin: 0 0 0.75rem;
+}
+
+.discover form {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.discover textarea {
+  padding: 0.65rem 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  font-size: 1rem;
+  font-family: inherit;
+  resize: vertical;
+}
+
+.discover textarea:focus {
+  outline: 2px solid #6366f1;
+  border-color: transparent;
+}
+
+.discover button:disabled {
+  opacity: 0.6;
+  cursor: default;
+}
+
+.discover-list {
+  list-style: none;
+  padding: 0;
+  margin: 1rem 0 0;
+  display: flex;
+  flex-direction: column;
+  gap: 0.75rem;
+}
+
+.discover-card {
+  border: 1px solid #e5e7eb;
+  border-radius: 10px;
+  padding: 1rem 1.25rem;
+  background: #fafafa;
+}
+
+.discover-head {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  flex-wrap: wrap;
+}
+
+.badge {
+  background: #eef2ff;
+  color: #4f46e5;
+  border-radius: 999px;
+  padding: 0.1rem 0.6rem;
+  font-size: 0.8rem;
+}
+
+.badge-kind {
+  background: #f0fdf4;
+  color: #16a34a;
+}
+
+.pron {
+  font-size: 0.85rem;
+}
+
+.discover-why {
+  margin: 0.35rem 0 0.75rem;
+  color: #6b7280;
+  font-size: 0.9rem;
+  font-style: italic;
+}
+
+.add-result-btn {
+  padding: 0.4rem 0.9rem;
+  font-size: 0.9rem;
+}
+
+.add-result-btn:disabled {
+  background: #d1fae5;
+  color: #059669;
+  cursor: default;
+}
+
+.error {
+  color: #dc2626;
+  text-align: center;
+}

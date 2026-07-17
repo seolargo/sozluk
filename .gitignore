@@ -1,0 +1,22 @@
+# Bağımlılıklar
+node_modules/
+
+# Build çıktıları
+client/dist/
+
+# Ortam değişkenleri (API anahtarları burada tutulur, asla commit'leme)
+.env
+.env.local
+.env.*.local
+
+# Kullanıcı verisi (kişisel sözlük kayıtları)
+server/data/words.json
+
+# Loglar
+*.log
+npm-debug.log*
+
+# İşletim sistemi / editör dosyaları
+.DS_Store
+.vscode/
+.idea/

@@ -1,9 +1,68 @@
-import { useEffect, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import './App.css';
 
 import { CULTURE_GROUPS } from './cultures';
 
 const API = '/api/words';
+
+function loaderSteps(culture) {
+  return [
+    { at: 0, label: 'Cümlen çözümleniyor' },
+    {
+      at: 4,
+      label: culture
+        ? `${culture} dilleri ve kültürel mirası taranıyor`
+        : 'Dünya dilleri ve kültürleri taranıyor',
+    },
+    { at: 14, label: 'Kavram aileleri tespit ediliyor (éros, agápi, philía...)' },
+    { at: 28, label: 'Atasözleri, deyimler ve özdeyişler aranıyor' },
+    { at: 45, label: 'Sonuçlar doğrulanıp Türkçe açıklamalar yazılıyor' },
+  ];
+}
+
+function DiscoverLoader({ culture }) {
+  const [elapsed, setElapsed] = useState(0);
+  const startRef = useRef(Date.now());
+
+  useEffect(() => {
+    const t = setInterval(
+      () => setElapsed(Math.floor((Date.now() - startRef.current) / 1000)),
+      1000
+    );
+    return () => clearInterval(t);
+  }, []);
+
+  const steps = loaderSteps(culture);
+  const activeIndex = steps.reduce(
+    (acc, s, i) => (elapsed >= s.at ? i : acc),
+    0
+  );
+
+  return (
+    <div className="loader-card">
+      <div className="loader-header">
+        <span className="spinner" />
+        <strong>{steps[activeIndex].label}...</strong>
+        <span className="loader-elapsed">{elapsed}sn</span>
+      </div>
+      <ul className="loader-steps">
+        {steps.map((s, i) => (
+          <li
+            key={s.label}
+            className={
+              i < activeIndex ? 'done' : i === activeIndex ? 'active' : 'pending'
+            }
+          >
+            {i < activeIndex ? '✓' : i === activeIndex ? '●' : '○'} {s.label}
+          </li>
+        ))}
+      </ul>
+      <p className="loader-note">
+        Derin bir arama bu — genellikle 30-60 saniye sürüyor.
+      </p>
+    </div>
+  );
+}
 
 function App() {
   const [words, setWords] = useState([]);
@@ -145,9 +204,7 @@ function App() {
           </div>
         </form>
         {discoverError && <p className="error">{discoverError}</p>}
-        {discoverLoading && (
-          <p className="muted">Dünya literatürü taranıyor, bu biraz sürebilir...</p>
-        )}
+        {discoverLoading && <DiscoverLoader culture={culture} />}
         <ul className="discover-list">
           {discoverResults.map((r) => (
             <li key={`${r.language}-${r.term}`} className="discover-card">

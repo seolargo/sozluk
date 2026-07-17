@@ -15,6 +15,8 @@ export const STRINGS = {
     searchBtn: 'Kavram Ara',
     searching: 'Aranıyor...',
     loaderNote: 'Derin bir arama bu — genellikle 30-60 saniye sürüyor.',
+    loaderNoteMore:
+      'Devam araması, öncekileri tekrarlamamak için daha derin düşünür — 1-2 dakika sürebilir.',
     literalLabel: 'Birebir çeviri:',
     addToDict: '+ Sözlüğe ekle',
     added: '✓ Eklendi',
@@ -69,6 +71,8 @@ export const STRINGS = {
     searchBtn: 'Search Concepts',
     searching: 'Searching...',
     loaderNote: 'This is a deep search — it usually takes 30-60 seconds.',
+    loaderNoteMore:
+      'Follow-up searches think harder to avoid repeating earlier results — this can take 1-2 minutes.',
     literalLabel: 'Literal translation:',
     addToDict: '+ Add to dictionary',
     added: '✓ Added',

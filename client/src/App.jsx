@@ -26,7 +26,7 @@ function loaderSteps(t, culture, person) {
   ];
 }
 
-function DiscoverLoader({ t, culture, person }) {
+function DiscoverLoader({ t, culture, person, isMore }) {
   const [elapsed, setElapsed] = useState(0);
   const startRef = useRef(Date.now());
 
@@ -63,7 +63,7 @@ function DiscoverLoader({ t, culture, person }) {
           </li>
         ))}
       </ul>
-      <p className="loader-note">{t.loaderNote}</p>
+      <p className="loader-note">{isMore ? t.loaderNoteMore : t.loaderNote}</p>
     </div>
   );
 }
@@ -89,6 +89,7 @@ function App() {
   const [addedTerms, setAddedTerms] = useState(new Set());
   const [exhausted, setExhausted] = useState(false);
   const [exhaustedNote, setExhaustedNote] = useState('');
+  const [isMoreSearch, setIsMoreSearch] = useState(false);
 
   const regionNames = useMemo(
     () => new Intl.DisplayNames([lang], { type: 'region' }),
@@ -146,6 +147,7 @@ function App() {
   async function runDiscover({ more = false } = {}) {
     if (!feeling.trim() || discoverLoading) return;
     setDiscoverLoading(true);
+    setIsMoreSearch(more);
     setDiscoverError('');
     if (!more) {
       setDiscoverResults([]);
@@ -282,7 +284,12 @@ function App() {
         </form>
         {discoverError && <p className="error">{discoverError}</p>}
         {discoverLoading && (
-          <DiscoverLoader t={t} culture={culture} person={person} />
+          <DiscoverLoader
+            t={t}
+            culture={culture}
+            person={person}
+            isMore={isMoreSearch}
+          />
         )}
         <ul className="discover-list">
           {discoverResults.map((r) => (

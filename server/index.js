@@ -3,7 +3,7 @@ import cors from 'cors';
 import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
-import Anthropic from '@anthropic-ai/sdk';
+import OpenAI from 'openai';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.join(__dirname, 'data', 'words.json');
@@ -108,31 +108,34 @@ app.post('/api/discover', async (req, res) => {
   if (!query) {
     return res.status(400).json({ error: 'Bir his veya düşünce tarifi yazmalısın.' });
   }
-  if (!process.env.ANTHROPIC_API_KEY) {
+  if (!process.env.OPENAI_API_KEY) {
     return res.status(503).json({
-      error: 'ANTHROPIC_API_KEY tanımlı değil. Sunucuyu başlatmadan önce API anahtarını ortam değişkeni olarak ver.',
+      error: 'OPENAI_API_KEY tanımlı değil. server/.env dosyasına anahtarını ekle.',
     });
   }
   try {
-    const client = new Anthropic();
-    const response = await client.messages.create({
-      model: 'claude-opus-4-8',
-      max_tokens: 16000,
-      thinking: { type: 'adaptive' },
-      system: DISCOVER_SYSTEM,
-      output_config: { format: { type: 'json_schema', schema: DISCOVER_SCHEMA } },
-      messages: [{ role: 'user', content: query }],
+    const client = new OpenAI();
+    const completion = await client.chat.completions.create({
+      model: 'gpt-5',
+      messages: [
+        { role: 'system', content: DISCOVER_SYSTEM },
+        { role: 'user', content: query },
+      ],
+      response_format: {
+        type: 'json_schema',
+        json_schema: { name: 'discover_results', strict: true, schema: DISCOVER_SCHEMA },
+      },
     });
-    const textBlock = response.content.find((b) => b.type === 'text');
-    if (!textBlock) {
+    const message = completion.choices[0]?.message;
+    if (!message?.content) {
       return res.status(502).json({ error: 'Modelden geçerli bir yanıt alınamadı.' });
     }
-    res.json(JSON.parse(textBlock.text));
+    res.json(JSON.parse(message.content));
   } catch (err) {
-    if (err instanceof Anthropic.AuthenticationError) {
-      return res.status(503).json({ error: 'API anahtarı geçersiz. ANTHROPIC_API_KEY değerini kontrol et.' });
+    if (err instanceof OpenAI.AuthenticationError) {
+      return res.status(503).json({ error: 'API anahtarı geçersiz. OPENAI_API_KEY değerini kontrol et.' });
     }
-    if (err instanceof Anthropic.RateLimitError) {
+    if (err instanceof OpenAI.RateLimitError) {
       return res.status(429).json({ error: 'İstek limiti aşıldı, biraz bekleyip tekrar dene.' });
     }
     console.error('discover hatası:', err);

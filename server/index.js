@@ -4,6 +4,7 @@ import fs from 'fs/promises';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import OpenAI from 'openai';
+import { filterWords, validateWordInput, buildWord } from './lib.js';
 
 const __dirname = path.dirname(fileURLToPath(import.meta.url));
 const DATA_FILE = path.join(__dirname, 'data', 'words.json');
@@ -21,61 +22,68 @@ async function readWords() {
   }
 }
 
-async function writeWords(words) {
+// Atomik yazma: önce geçici dosyaya yaz, sonra rename ile yerine koy.
+// Yazma ortasında süreç çökerse words.json yarım/bozuk kalmaz.
+async function atomicWrite(words) {
   await fs.mkdir(path.dirname(DATA_FILE), { recursive: true });
-  await fs.writeFile(DATA_FILE, JSON.stringify(words, null, 2));
+  const tmp = `${DATA_FILE}.${process.pid}.tmp`;
+  await fs.writeFile(tmp, JSON.stringify(words, null, 2));
+  await fs.rename(tmp, DATA_FILE);
+}
+
+// Oku-değiştir-yaz döngüsünü tek bir sıraya sokar (in-process mutex).
+// Eşzamanlı iki istek aynı listeyi okuyup üzerine yazarsa biri kaybolurdu.
+// mutate(words) -> { next, result }: next dizisi yazılır (null ise yazma atlanır),
+// result çağırana döner. Zincirdeki bir hata sonrakileri etkilemesin diye
+// writeChain her adımda hataları yutarak ilerler.
+let writeChain = Promise.resolve();
+
+function updateWords(mutate) {
+  const run = writeChain.then(async () => {
+    const words = await readWords();
+    const { next, result } = await mutate(words);
+    if (next !== null && next !== undefined) await atomicWrite(next);
+    return result;
+  });
+  writeChain = run.then(
+    () => undefined,
+    () => undefined
+  );
+  return run;
 }
 
 // Tüm kelimeleri listele, ?q= ile arama yapılabilir
 app.get('/api/words', async (req, res) => {
   const words = await readWords();
-  const q = (req.query.q || '').toLocaleLowerCase('tr');
-  const result = q
-    ? words.filter(
-        (w) =>
-          w.term.toLocaleLowerCase('tr').includes(q) ||
-          w.definition.toLocaleLowerCase('tr').includes(q)
-      )
-    : words;
-  res.json(result);
+  res.json(filterWords(words, req.query.q || ''));
 });
 
 // Yeni kelime ekle
 app.post('/api/words', async (req, res) => {
-  const { term, definition, meta } = req.body;
-  if (!term?.trim() || !definition?.trim()) {
-    return res.status(400).json({ error: 'Kelime ve tanım zorunludur.' });
+  const check = validateWordInput(req.body);
+  if (!check.ok) {
+    return res.status(400).json({ error: check.error });
   }
-  const words = await readWords();
-  const word = {
+  const word = buildWord(req.body, {
     id: Date.now().toString(36),
-    term: term.trim(),
-    definition: definition.trim(),
     createdAt: new Date().toISOString(),
-  };
-  if (meta && typeof meta === 'object') {
-    const pick = (k) => (typeof meta[k] === 'string' ? meta[k].trim() : '');
-    word.meta = {
-      language: pick('language'),
-      kind: pick('kind'),
-      pronunciation: pick('pronunciation'),
-      literal: pick('literal'),
-      meaning: pick('meaning'),
-    };
-  }
-  words.unshift(word);
-  await writeWords(words);
+  });
+  await updateWords((words) => ({ next: [word, ...words], result: word }));
   res.status(201).json(word);
 });
 
 // Kelime sil
 app.delete('/api/words/:id', async (req, res) => {
-  const words = await readWords();
-  const filtered = words.filter((w) => w.id !== req.params.id);
-  if (filtered.length === words.length) {
+  const found = await updateWords((words) => {
+    const filtered = words.filter((w) => w.id !== req.params.id);
+    if (filtered.length === words.length) {
+      return { next: null, result: false };
+    }
+    return { next: filtered, result: true };
+  });
+  if (!found) {
     return res.status(404).json({ error: 'Kelime bulunamadı.' });
   }
-  await writeWords(filtered);
   res.status(204).end();
 });
 
